@@ -15,7 +15,7 @@
 ## Screenshots
 
 **Main App:**  
-![App Screenshot](https://github.com/user-attachments/assets/232cb631-7875-4b55-9133-87de3f50706a)
+![App Screenshot](https://github.com/user-attachments/assets/065fe16e-459a-4a95-aeb3-4ac4072cb1d1)
 
 **Menu Icon:**  
 ![Menu Icon](https://github.com/user-attachments/assets/f1d76a3d-48e6-4f24-a895-6f5a263e7735)

@@ -8,9 +8,9 @@
 - Full month view at a glance
 - Minimal, lightweight, and fast
 - Lives in the menu bar for easy access
-- Shows upcomming holidays
-- Marks sepcial days for you and help set reminders
-- Time-zone conversion date and time
+- Shows upcomming holidays ( TODO )
+- Marks sepcial days for you and help set reminders ( TODO )
+- Time-zone conversion date and time ( TODO )
 
 ## Screenshots
 

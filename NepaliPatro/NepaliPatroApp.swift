@@ -119,104 +119,194 @@ struct NepaliPatroApp: App {
 struct VCenterView: View {
     @State private var displayYear: Int
     @State private var displayMonth: Int
+    @State private var selectedDate: BSDate?
+    @State private var showDateConversion = false
     private let today: BSDate?
+    @State private var adDate = Date()
+    @State private var bsDate = NepaliCalendar.shared.convertToBSDate(from: Date()) ?? BSDate(year: 2081, month: 1, day: 1)
+    
     
     init() {
         let bsNow = NepaliCalendar.shared.convertToBSDate(from: Date()) ?? BSDate(year: 2081, month: 1, day: 1)
         _displayYear = State(initialValue: bsNow.year)
         _displayMonth = State(initialValue: bsNow.month)
         self.today = bsNow
+        self._selectedDate = State(initialValue: bsNow) // default to today
     }
+
     
     var body: some View {
         VStack(spacing: 15) {
             // Header
-            HStack {
-                Text("\(NepaliCalendar.shared.months[displayMonth - 1]) \(NepaliCalendar.shared.toNepaliDigits(displayYear))")
-                    .font(.system(size: 18, weight: .bold))
-                Spacer()
-                HStack(spacing: 12) {
-                    Button(action: { navigate(-1) }) { Image(systemName: "chevron.left") }
-                    Button(action: { navigate(1) })  { Image(systemName: "chevron.right") }
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, 5)
-
-            // Days of week
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7)) {
-                ForEach(NepaliCalendar.shared.weekDays, id: \.self) { day in
-                    Text(day).font(.caption2).fontWeight(.black).foregroundColor(.secondary)
-                }
-            }
-
-            // Grid Logic
-            let firstWeekday = NepaliCalendar.shared.firstWeekday(year: displayYear, month: displayMonth)
-            let daysInMonth = NepaliCalendar.shared.daysInMonth(year: displayYear, month: displayMonth)
-
-            // Previous month info for leading placeholders
-            let prevMonth = displayMonth == 1 ? 12 : displayMonth - 1
-            let prevYear  = displayMonth == 1 ? displayYear - 1 : displayYear
-            let daysInPrevMonth = NepaliCalendar.shared.daysInMonth(year: prevYear, month: prevMonth)
-
-            // Always use exactly 35 cells; expand to 42 only when content overflows
-            let totalNeeded    = firstWeekday + daysInMonth
-            let totalGridCells = totalNeeded > 35 ? 42 : 35
-            let trailingCount  = totalGridCells - totalNeeded   // always >= 0
-
-            // Build a flat array of (label, isCurrentMonth, isToday) so ForEach never
-            // receives an empty range like 1...0
-            let cells: [(String, Bool, Bool)] = {
-                var result: [(String, Bool, Bool)] = []
-
-                // Leading days from previous month
-                for i in 0..<firstWeekday {
-                    let day = daysInPrevMonth - (firstWeekday - 1) + i
-                    result.append((NepaliCalendar.shared.toNepaliDigits(day), false, false))
-                }
-
-                // Current month days
-                for day in 1...daysInMonth {
-                    let isToday = today?.day == day &&
-                                  today?.month == displayMonth &&
-                                  today?.year == displayYear
-                    result.append((NepaliCalendar.shared.toNepaliDigits(day), true, isToday))
-                }
-
-                // Trailing days from next month
-                for day in 1...max(1, trailingCount) where day <= trailingCount {
-                    result.append((NepaliCalendar.shared.toNepaliDigits(day), false, false))
-                }
-
-                return result
-            }()
-
-            let columns = Array(repeating: GridItem(.fixed(32), spacing: 8), count: 7)
-
-            LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(Array(cells.enumerated()), id: \.offset) { _, cell in
-                    let (label, isCurrent, isToday) = cell
-                    Text(label)
-                        .font(isCurrent ? .system(size: 14, design: .rounded) : .caption2)
-                        .frame(width: 32, height: 32)
-                        .background(isToday ? Color.orange : Color.clear)
-                        .foregroundColor(
-                            isToday   ? .white :
-                            isCurrent ? .primary :
-                                        .secondary.opacity(0.4)
+            if showDateConversion {
+                HStack(spacing: 30) {
+                    
+                    // AD Date
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("AD Date")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        DatePicker(
+                            "",
+                            selection: $adDate,
+                            displayedComponents: .date
                         )
-                        .clipShape(Circle())
+                        .labelsHidden()
+                        .onChange(of: adDate) { newValue in
+                            if let converted = NepaliCalendar.shared.convertToBSDate(from: newValue) {
+                                bsDate = converted
+                            }
+                        }
+                    }
+                    
+                    // BS Date
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("BS Date")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        HStack {
+                            Text("\(NepaliCalendar.shared.toNepaliDigits(bsDate.day))").font(Font.system(size: 12))
+                            Text(NepaliCalendar.shared.months[bsDate.month - 1]).font(Font.system(size: 12))
+                            Text(NepaliCalendar.shared.toNepaliDigits(bsDate.year)).font(Font.system(size: 12))
+                        }
+                        .font(.system(size: 16, weight: .medium))
+                    }
+                }
+                .padding()
+            } else {
+                HStack {
+                    Text("\(NepaliCalendar.shared.months[displayMonth - 1]) \(NepaliCalendar.shared.toNepaliDigits(displayYear))")
+                        .font(.system(size: 18, weight: .bold))
+                    Spacer()
+                    // show button take user to current month
+                    Button("आज") {
+                        if let today = today {
+                            _displayYear.wrappedValue = today.year
+                            _displayMonth.wrappedValue = today.month
+                            selectedDate = today
+                        }
+                    }.foregroundStyle(Color(.red))
+                    
+                    HStack(spacing: 12) {
+                        Button(action: { navigate(-1) }) { Image(systemName: "chevron.left") }
+                        Button(action: { navigate(1) })  { Image(systemName: "chevron.right") }
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 5)
+                
+                
+                
+                // Days of week
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7)) {
+                    ForEach(NepaliCalendar.shared.weekDays, id: \.self) { day in
+                        Text(day).font(.caption2).fontWeight(.black).foregroundColor(.secondary)
+                    }
+                }
+                
+                // Grid Logic
+                let firstWeekday = NepaliCalendar.shared.firstWeekday(year: displayYear, month: displayMonth)
+                let daysInMonth = NepaliCalendar.shared.daysInMonth(year: displayYear, month: displayMonth)
+                
+                // Previous month info for leading placeholders
+                let prevMonth = displayMonth == 1 ? 12 : displayMonth - 1
+                let prevYear  = displayMonth == 1 ? displayYear - 1 : displayYear
+                let daysInPrevMonth = NepaliCalendar.shared.daysInMonth(year: prevYear, month: prevMonth)
+                
+                // Always use exactly 35 cells; expand to 42 only when content overflows
+                let totalNeeded    = firstWeekday + daysInMonth
+                let totalGridCells = totalNeeded > 35 ? 42 : 35
+                let trailingCount  = totalGridCells - totalNeeded   // always >= 0
+                
+                // Build a flat array of (label, isCurrentMonth, isToday, numericDay?)
+                // numericDay is present only for current-month cells so we can select the date.
+                let cells: [(String, Bool, Bool, Int?)] = {
+                    var result: [(String, Bool, Bool, Int?)] = []
+                    
+                    // Leading days from previous month
+                    for i in 0..<firstWeekday {
+                        let day = daysInPrevMonth - (firstWeekday - 1) + i
+                        result.append((NepaliCalendar.shared.toNepaliDigits(day), false, false, nil))
+                    }
+                    
+                    // Current month days
+                    for day in 1...daysInMonth {
+                        let isToday = today?.day == day &&
+                        today?.month == displayMonth &&
+                        today?.year == displayYear
+                        result.append((NepaliCalendar.shared.toNepaliDigits(day), true, isToday, day))
+                    }
+                    
+                    // Trailing days from next month
+                    for day in 1...max(1, trailingCount) where day <= trailingCount {
+                        result.append((NepaliCalendar.shared.toNepaliDigits(day), false, false, nil))
+                    }
+                    
+                    return result
+                }()
+                
+                let columns = Array(repeating: GridItem(.fixed(32), spacing: 8), count: 7)
+                
+                LazyVGrid(columns: columns, spacing: 8) {
+                    ForEach(Array(cells.enumerated()), id: \.offset) {index, cell in
+                        let (label, isCurrent, isToday, numericDay) = cell
+                        let isSelected: Bool = {
+                            guard isCurrent, let d = numericDay, let sel = selectedDate else { return false }
+                            return sel.year == displayYear && sel.month == displayMonth && sel.day == d
+                        }()
+                        
+                        // Crimson-like color
+                        let crimson = Color(.red)
+                        
+                        Text(label)
+                        //                        .foregroundColor((index % 7 == 6) ? .red : nil)
+                            .font(isCurrent ? .system(size: 14, design: .rounded) : .caption2)
+                            .frame(width: 32, height: 32)
+                        // Selection takes priority; otherwise keep today's orange highlight
+                            .background(isSelected ? crimson : (isToday ? Color.red : Color.clear))
+                        
+                            .foregroundColor(
+                                isSelected || isToday ? .white :
+                                    index % 7 == 6 ? .red : // Saturday
+                                isCurrent ? .primary :
+                                        .secondary.opacity(0.4)
+                            )
+                            .clipShape(Circle())
+                            .transition(.opacity.animation(.easeInOut(duration: 0.25)))
+                            .contentShape(Rectangle()) // make the whole frame tappable
+                            .onTapGesture {
+                                guard isCurrent, let d = numericDay else { return }
+                                selectedDate = BSDate(year: displayYear, month: displayMonth, day: d)
+                            }
+                    }
+                }
+                
+                // Inline holiday/tithi text
+                if let sel = selectedDate {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("\(NepaliCalendar.shared.months[sel.month - 1]) \(NepaliCalendar.shared.toNepaliDigits(sel.day)), \(NepaliCalendar.shared.toNepaliDigits(sel.year))")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 4)
                 }
             }
-
             Divider()
-
+            
             HStack {
                 Button("Quit App") { NSApplication.shared.terminate(nil) }
                     .buttonStyle(.link).foregroundColor(.red)
                 Spacer()
-                Text("BS Calendar").font(.caption2).foregroundColor(.secondary)
-            }
+                
+                Button("Date conversion") {
+                    showDateConversion.toggle()
+                }
+                .font(.caption2)
+                .foregroundColor(.secondary)            }
         }
         .padding()
         .frame(width: 280)
@@ -229,6 +319,15 @@ struct VCenterView: View {
         else if m > 12 { m = 1; y += 1 }
         if NepaliCalendar.shared.daysInMonth(year: y, month: m) > 0 {
             displayMonth = m; displayYear = y
+            // keep selection within new month if possible
+            if let sel = selectedDate, sel.year == y, sel.month == m {
+                selectedDate = sel
+            } else if let today = today, today.year == y, today.month == m {
+                selectedDate = today
+            } else {
+                selectedDate = BSDate(year: y, month: m, day: 1)
+            }
         }
     }
+    
 }

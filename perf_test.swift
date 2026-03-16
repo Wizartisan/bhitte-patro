@@ -11,6 +11,7 @@ struct BSDate: Equatable {
 struct CalendarData: Codable {
     let monthDaysData: [String: [Int]]
     let holidays: [String: [String: [String: [String]]]]
+    let tithi: [String: [String: [Int]]]
 }
 
 class NepaliCalendar {

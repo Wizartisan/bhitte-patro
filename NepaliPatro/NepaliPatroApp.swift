@@ -19,6 +19,7 @@ struct BSDate: Equatable {
 struct CalendarData: Codable {
     let monthDaysData: [String: [Int]]
     let holidays: [String: [String: [String: [String]]]]
+    let tithi: [String: [String: [Int]]]
 }
 
 class NepaliCalendar {
@@ -27,6 +28,7 @@ class NepaliCalendar {
     let nepaliNumbers = ["०", "१", "२", "३", "४", "५", "६", "७", "८", "९"]
     let weekDays = ["आइत", "सोम", "मंगल", "बुध", "बिही", "शुक्र", "शनि"]
     let months = ["बैशाख", "जेठ", "असार", "साउन", "भदौ", "असोज", "कात्तिक", "मंसिर", "पुष", "माघ", "फागुन", "चैत"]
+    let tithiNames = ["", "प्रतिपदा", "द्वितीया", "तृतीया", "चतुर्थी", "पञ्चमी", "षष्ठी", "सप्तमी", "अष्टमी", "नवमी", "दशमी", "एकादशी", "द्वादशी", "त्रयोदशी", "चतुर्दशी", "पूर्णिमा/औँसी"]
     
     // Anchor: 2060/01/01 BS = 2003/04/14 AD (Monday = 1)
     private let anchorYear = 2060
@@ -36,6 +38,8 @@ class NepaliCalendar {
     
     private var monthDaysData: [Int: [Int]] = [:]
     private var holidays: [Int: [Int: [Int: [String]]]] = [:]
+    private var tithi: [Int: [Int: [Int]]] = [:]
+    
     
     init() {
         loadCalendarData()
@@ -76,6 +80,18 @@ class NepaliCalendar {
                     self.holidays[year] = yearHolidays
                 }
             }
+            
+            for (yearStr, months) in decodedData.tithi {
+                if let year = Int(yearStr) {
+                    var yearTithi: [Int: [Int]] = [:]
+                    for (monthStr, days) in months {
+                        if let month = Int(monthStr) {
+                            yearTithi[month] = days
+                        }
+                    }
+                    self.tithi[year] = yearTithi
+                }
+            }
         } catch {
             print("Error loading/decoding calendar.json: \(error)")
         }
@@ -84,6 +100,15 @@ class NepaliCalendar {
     func holidayText(year: Int, month: Int, day: Int) -> String? {
         guard let names = holidays[year]?[month]?[day], !names.isEmpty else { return nil }
         return names.joined(separator: " / ")
+    }
+    
+    func tithiText(year: Int, month: Int, day: Int) -> String? {
+        guard let monthTithis = tithi[year]?[month], day > 0 && day <= monthTithis.count else { return nil }
+        let val = monthTithis[day - 1]
+        if val >= 1 && val <= 15 {
+            return tithiNames[val]
+        }
+        return nil
     }
     
     func convertToBSDate(from date: Date) -> BSDate? {
@@ -398,10 +423,18 @@ struct VCenterView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                         
-                        if let hText = NepaliCalendar.shared.holidayText(year: sel.year, month: sel.month, day: sel.day) {
-                            Text(hText)
-                                .font(.system(size: 14))
-                                .foregroundColor(Color.primary)
+                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                            if let hText = NepaliCalendar.shared.holidayText(year: sel.year, month: sel.month, day: sel.day) {
+                                Text(hText)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(Color.primary)
+                            }
+                            
+                            if let tithi = NepaliCalendar.shared.tithiText(year: sel.year, month: sel.month, day: sel.day) {
+                                Text(tithi)
+                                
+                                    .foregroundColor(.purple)
+                            }
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)

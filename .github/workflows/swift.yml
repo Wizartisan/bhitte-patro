@@ -22,12 +22,7 @@ jobs:
           -configuration Debug \
           clean build
 
-    - name: Run Tests
+    - name: Run Performance and Functional Tests
       run: |
-        xcodebuild \
-          -project NepaliPatro.xcodeproj \
-          -scheme NepaliPatro \
-          -sdk macosx \
-          -configuration Debug \
-          -destination 'platform=macOS' \
-          test
+        swift perf_test.swift
+        swift tests.swift

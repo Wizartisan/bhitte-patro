@@ -22,4 +22,12 @@ jobs:
           -configuration Debug \
           clean build
 
-    
+    - name: Run Tests
+      run: |
+        xcodebuild \
+          -project NepaliPatro.xcodeproj \
+          -scheme NepaliPatro \
+          -sdk macosx \
+          -configuration Debug \
+          -destination 'platform=macOS' \
+          test

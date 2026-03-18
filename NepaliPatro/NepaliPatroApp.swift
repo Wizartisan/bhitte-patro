@@ -149,7 +149,7 @@ class NepaliCalendar {
         // Anchor BS date components
         var year = anchorYear       // e.g., 2060
         var month = anchorMonth     // e.g., 1
-        var day = anchorDay         // e.g., 1
+        letg day = anchorDay         // e.g., 1
         
         // Calculate number of days from anchor BS date to target BS date
         var totalDays = 0

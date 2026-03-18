@@ -21,8 +21,42 @@ struct CalendarView: View {
 
     var body: some View {
         HStack {
-            Text("\(NepaliCalendar.shared.months[displayMonth - 1]) \(NepaliCalendar.shared.toNepaliDigits(displayYear))")
-                .font(.system(size: 18, weight: .bold))
+          
+            HStack(spacing: 10) {
+                Menu {
+                    ForEach(1...12, id: \.self) { month in
+                        Button(action: {
+                            displayMonth = month
+                        }) {
+                            Text(NepaliCalendar.shared.months[month - 1])
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Text("\(NepaliCalendar.shared.months[displayMonth - 1]) ")
+                            .font(.system(size: 16, weight: .bold))
+                    }
+                    .padding(8)
+                    .cornerRadius(8)
+                }
+
+                Menu {
+                    ForEach(2060...2085, id: \.self) { year in
+                        Button(action: {
+                            displayYear = year
+                        }) {
+                            Text(NepaliCalendar.shared.toNepaliDigits(year))
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Text("\(NepaliCalendar.shared.toNepaliDigits(displayYear)) ")
+                            .font(.system(size: 16, weight: .bold))
+                    }
+                    .padding(8)
+                    .cornerRadius(8)
+                }
+            }
             Spacer()
             Button("आज") {
                 if let today = today {
@@ -33,12 +67,16 @@ struct CalendarView: View {
             }.foregroundStyle(Color(.red))
             
             HStack(spacing: 12) {
-                Button(action: { navigate(-1) }) { Image(systemName: "chevron.left") }
-                Button(action: { navigate(1) })  { Image(systemName: "chevron.right") }
+                Button(action: { navigate(-1) }) { Image(systemName: "chevron.left").foregroundColor(Color(.red)).padding(10).background(
+                    Circle()
+                ) }
+                Button(action: { navigate(1) })  { Image(systemName: "chevron.right").foregroundColor(Color(.red)).padding(10).background(
+                    Circle()
+                )  }
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 5)
+        .padding(.horizontal, 10)
         
         LazyVGrid(columns: columns, alignment: .center, spacing: rowSpacing) {
             ForEach(NepaliCalendar.shared.weekDays, id: \.self) { day in
@@ -68,7 +106,7 @@ struct CalendarView: View {
                       spacing: rowSpacing) {
                 ForEach(Array(cells.enumerated()), id: \.offset) { index, cell in
                     let isSelected: Bool = {
-                        guard cell.isCurrent, let sel = selectedDate else { return false }
+                        guard let sel = selectedDate else { return false }
                         return sel.year == cell.bsYear && sel.month == cell.bsMonth && sel.day == cell.bsDay
                     }()
                     
@@ -124,8 +162,20 @@ struct CalendarView: View {
                     .frame(width: cellSize, height: cellSize, alignment: .center)
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        guard cell.isCurrent else { return }
-                        selectedDate = BSDate(year: cell.bsYear, month: cell.bsMonth, day: cell.bsDay)
+                        // Navigate based on which month the tapped cell belongs to
+                        let tapped = BSDate(year: cell.bsYear, month: cell.bsMonth, day: cell.bsDay)
+                        
+                        if cell.bsYear == displayYear && cell.bsMonth == displayMonth {
+                            // Current month: just select
+                            selectedDate = tapped
+                        } else {
+                            // Different month: update displayed month/year and select
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                displayYear = cell.bsYear
+                                displayMonth = cell.bsMonth
+                                selectedDate = tapped
+                            }
+                        }
                     }
                     .transition(.opacity.animation(.easeInOut(duration: 0.25)))
                 }
@@ -138,17 +188,24 @@ struct CalendarView: View {
                 Text("\(NepaliCalendar.shared.months[sel.month - 1]) \(NepaliCalendar.shared.toNepaliDigits(sel.day)), \(NepaliCalendar.shared.toNepaliDigits(sel.year))")
                     .font(.caption)
                     .foregroundColor(.secondary)
-                
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
+
+                HStack(alignment: .top, spacing: 8) {
                     if let hText = NepaliCalendar.shared.holidayText(year: sel.year, month: sel.month, day: sel.day) {
                         Text(hText)
                             .font(.system(size: 14))
-                            .foregroundColor(Color.primary)
+                            .foregroundColor(.red)
+                            .frame(maxWidth: .infinity * 0.8, alignment: .leading)
+                            .lineLimit(nil)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    
+
                     if let tithi = NepaliCalendar.shared.tithiText(year: sel.year, month: sel.month, day: sel.day) {
                         Text(tithi)
-                            .foregroundColor(.purple)
+                            .font(.system(size: 14))
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity * 0.2, alignment: .leading)
+                            .lineLimit(nil)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
@@ -170,6 +227,8 @@ struct CalendarView: View {
         var y = displayYear
         if m < 1 { m = 12; y -= 1 }
         else if m > 12 { m = 1; y += 1 }
+        // Prevent navigation beyond 2060-2085 range
+        guard y >= 2060 && y <= 2085 else { return }
         if NepaliCalendar.shared.daysInMonth(year: y, month: m) > 0 {
             displayMonth = m; displayYear = y
             if let sel = selectedDate, sel.year == y, sel.month == m {

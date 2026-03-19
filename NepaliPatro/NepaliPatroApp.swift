@@ -340,7 +340,8 @@ struct VCenterView: View {
                 Button {
                     NSApplication.shared.terminate(nil)
                 } label: {
-                    Image(systemName: "xmark.circle")
+                    Image(systemName: "power")
+                        .foregroundStyle(Color(.red.opacity(0.6)))
                         .font(.system(size: 13, weight: .semibold))
                         .frame(width: 24, height: 24)
                         .background(.quaternary, in: Circle())

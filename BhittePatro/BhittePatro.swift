@@ -266,7 +266,7 @@ struct LargeWidgetView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 8) {
                     Text("\(NepaliCalendar.shared.months[displayMonth - 1])")
                         .font(.system(size: 18, weight: .bold))
                         .foregroundStyle(.primary)
@@ -293,7 +293,7 @@ struct LargeWidgetView: View {
                 .frame(height: 1)
 
             // Weekday headers
-            HStack(spacing: 0) {
+            HStack(spacing: 1) {
                 ForEach(NepaliCalendar.shared.weekDays, id: \.self) { day in
                     Text(day)
                         .font(.system(size: 11, weight: .bold))
@@ -301,17 +301,18 @@ struct LargeWidgetView: View {
                         .frame(maxWidth: .infinity)
                 }
             }
+            .padding(.horizontal, 8)
             .padding(.vertical, 8)
 
             // Calendar grid
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 1) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 1), count: 7), spacing: 1) {
                 ForEach(cells, id: \.day) { cell in
                     CalendarCellView(cell: cell, isToday: cell.isToday)
                         .aspectRatio(1, contentMode: .fit)
                 }
             }
             .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(.bottom, 4)
 
             // Footer - Holiday/Tithi for today
             if let holiday = NepaliCalendar.shared.holidayText(year: today.year, month: today.month, day: today.day) {

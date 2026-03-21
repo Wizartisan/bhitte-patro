@@ -6,14 +6,65 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		3BBAE69F2F6E5409003B0464 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BBAE69E2F6E5409003B0464 /* WidgetKit.framework */; };
+		3BBAE6A12F6E5409003B0464 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BBAE6A02F6E5409003B0464 /* SwiftUI.framework */; };
+		3BBAE6B02F6E540A003B0464 /* BhittePatroExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3BBAE69C2F6E5409003B0464 /* BhittePatroExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		3BBAE6AE2F6E540A003B0464 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3BB854902F6313090029AC28 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3BBAE69B2F6E5409003B0464;
+			remoteInfo = BhittePatroExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		3BBAE6B12F6E540A003B0464 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				3BBAE6B02F6E540A003B0464 /* BhittePatroExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		3BB854982F6313090029AC28 /* NepaliPatro.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NepaliPatro.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3BBAE69C2F6E5409003B0464 /* BhittePatroExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BhittePatroExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		3BBAE69E2F6E5409003B0464 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		3BBAE6A02F6E5409003B0464 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		3BBAE6B42F6E540A003B0464 /* Exceptions for "BhittePatro" folder in "BhittePatroExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 3BBAE69B2F6E5409003B0464 /* BhittePatroExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		3BB8549A2F6313090029AC28 /* NepaliPatro */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = NepaliPatro;
+			sourceTree = "<group>";
+		};
+		3BBAE6A22F6E5409003B0464 /* BhittePatro */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				3BBAE6B42F6E540A003B0464 /* Exceptions for "BhittePatro" folder in "BhittePatroExtension" target */,
+			);
+			path = BhittePatro;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -26,6 +77,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3BBAE6992F6E5409003B0464 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3BBAE6A12F6E5409003B0464 /* SwiftUI.framework in Frameworks */,
+				3BBAE69F2F6E5409003B0464 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -33,6 +93,8 @@
 			isa = PBXGroup;
 			children = (
 				3BB8549A2F6313090029AC28 /* NepaliPatro */,
+				3BBAE6A22F6E5409003B0464 /* BhittePatro */,
+				3BBAE69D2F6E5409003B0464 /* Frameworks */,
 				3BB854992F6313090029AC28 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,8 +103,18 @@
 			isa = PBXGroup;
 			children = (
 				3BB854982F6313090029AC28 /* NepaliPatro.app */,
+				3BBAE69C2F6E5409003B0464 /* BhittePatroExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		3BBAE69D2F6E5409003B0464 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				3BBAE69E2F6E5409003B0464 /* WidgetKit.framework */,
+				3BBAE6A02F6E5409003B0464 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -55,10 +127,12 @@
 				3BB854942F6313090029AC28 /* Sources */,
 				3BB854952F6313090029AC28 /* Frameworks */,
 				3BB854962F6313090029AC28 /* Resources */,
+				3BBAE6B12F6E540A003B0464 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				3BBAE6AF2F6E540A003B0464 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				3BB8549A2F6313090029AC28 /* NepaliPatro */,
@@ -69,6 +143,28 @@
 			productName = NepaliPatro;
 			productReference = 3BB854982F6313090029AC28 /* NepaliPatro.app */;
 			productType = "com.apple.product-type.application";
+		};
+		3BBAE69B2F6E5409003B0464 /* BhittePatroExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3BBAE6B52F6E540A003B0464 /* Build configuration list for PBXNativeTarget "BhittePatroExtension" */;
+			buildPhases = (
+				3BBAE6982F6E5409003B0464 /* Sources */,
+				3BBAE6992F6E5409003B0464 /* Frameworks */,
+				3BBAE69A2F6E5409003B0464 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				3BBAE6A22F6E5409003B0464 /* BhittePatro */,
+			);
+			name = BhittePatroExtension;
+			packageProductDependencies = (
+			);
+			productName = BhittePatroExtension;
+			productReference = 3BBAE69C2F6E5409003B0464 /* BhittePatroExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -81,6 +177,9 @@
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					3BB854972F6313090029AC28 = {
+						CreatedOnToolsVersion = 26.0.1;
+					};
+					3BBAE69B2F6E5409003B0464 = {
 						CreatedOnToolsVersion = 26.0.1;
 					};
 				};
@@ -100,12 +199,20 @@
 			projectRoot = "";
 			targets = (
 				3BB854972F6313090029AC28 /* NepaliPatro */,
+				3BBAE69B2F6E5409003B0464 /* BhittePatroExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		3BB854962F6313090029AC28 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3BBAE69A2F6E5409003B0464 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +229,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3BBAE6982F6E5409003B0464 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		3BBAE6AF2F6E540A003B0464 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3BBAE69B2F6E5409003B0464 /* BhittePatroExtension */;
+			targetProxy = 3BBAE6AE2F6E540A003B0464 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		3BB854A12F63130A0029AC28 /* Debug */ = {
@@ -325,6 +447,68 @@
 			};
 			name = Release;
 		};
+		3BBAE6B22F6E540A003B0464 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BhittePatro/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = BhittePatro;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pranab.NepaliPatro.BhittePatro;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		3BBAE6B32F6E540A003B0464 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BhittePatro/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = BhittePatro;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pranab.NepaliPatro.BhittePatro;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -342,6 +526,15 @@
 			buildConfigurations = (
 				3BB854A42F63130A0029AC28 /* Debug */,
 				3BB854A52F63130A0029AC28 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3BBAE6B52F6E540A003B0464 /* Build configuration list for PBXNativeTarget "BhittePatroExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3BBAE6B22F6E540A003B0464 /* Debug */,
+				3BBAE6B32F6E540A003B0464 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

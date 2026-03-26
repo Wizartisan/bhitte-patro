@@ -42,26 +42,7 @@ struct CalendarView: View {
     // MARK: - Header Section
     private var headerSection: some View {
         HStack(spacing: 8) {
-            // आज button
-            Button("आज") {
-                withAnimation {
-                    if let today = today {
-                        displayYear = today.year
-                        displayMonth = today.month
-                        selectedDate = today
-                    }
-                }
-            }
-            .font(.system(size: 16, weight: .semibold))
-            .foregroundStyle(.red)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Color.red.opacity(0.1), in: Capsule())
-            .buttonStyle(.plain)
-
-            Spacer(minLength: 0)
-
-            // Navigation controls
+            // Month and Year selector (left side)
             HStack(spacing: 4) {
                 Button(action: { navigate(-1) }) {
                     Image(systemName: "chevron.left")
@@ -86,10 +67,14 @@ struct CalendarView: View {
                         }
                     }
                 } label: {
-                    Text(NepaliCalendar.shared.months[displayMonth - 1])
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.primary)
-                        .frame(minWidth: 80)
+                    HStack {
+                        Spacer()
+                        Text(NepaliCalendar.shared.months[displayMonth - 1])
+                            .font(.system(sfrize: 16, weight: .bold))
+                            .foregroundColor(.primary)
+                        Spacer()
+                    }
+                    .frame(width: 140)
                 }
                 .menuStyle(.borderlessButton)
 
@@ -110,7 +95,7 @@ struct CalendarView: View {
                     Text(NepaliCalendar.shared.toNepaliDigits(displayYear))
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.primary)
-                        .frame(minWidth: 55)
+                        .frame(width: 65, alignment: .center)
                 }
                 .menuStyle(.borderlessButton)
 
@@ -126,19 +111,39 @@ struct CalendarView: View {
 
             Spacer(minLength: 0)
 
-            // Settings button
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    viewMode = .settings
-                }
-            } label: {
-                Image(systemName: "gearshape")
+            // Right side controls: आज button (only if not in current month) + Settings
+            HStack(spacing: 4) {
+                // आज button (only if not in current month)
+                if let today = today, !(today.year == displayYear && today.month == displayMonth) {
+                    Button("आज") {
+                        withAnimation {
+                            displayYear = today.year
+                            displayMonth = today.month
+                            selectedDate = today
+                        }
+                    }
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 32, height: 32)
-                    .background(Color.secondary.opacity(0.15), in: Circle())
+                    .foregroundStyle(.red)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.red.opacity(0.1), in: Capsule())
+                    .buttonStyle(.plain)
+                }
+
+                // Settings button
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        viewMode = .settings
+                    }
+                } label: {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 32, height: 32)
+                        .background(Color.secondary.opacity(0.15), in: Circle())
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
     }
 
@@ -334,11 +339,11 @@ fileprivate struct CalendarCellView: View {
     private let cellCornerRadius: CGFloat = 6
 
     var body: some View {
-        let isHighlighted: Bool = {
+        let isSelected: Bool = {
             if let sel = selectedDate {
                 return sel.year == cell.bsYear && sel.month == cell.bsMonth && sel.day == cell.bsDay
             }
-            return cell.isToday
+            return false
         }()
 
         let nepaliLabel = NepaliCalendar.shared.toNepaliDigits(cell.bsDay)
@@ -352,13 +357,13 @@ fileprivate struct CalendarCellView: View {
         }()
 
         ZStack {
-            // Background
-            if isHighlighted {
+            // Background - only today gets highlighted
+            if cell.isToday {
                 RoundedRectangle(cornerRadius: cellCornerRadius)
                     .fill(Color.red)
-            } else if cell.isToday {
+            } else if isSelected {
                 RoundedRectangle(cornerRadius: cellCornerRadius)
-                    .fill(Color.red.opacity(0.15))
+                    .fill(Color.secondary.opacity(0.15))
             }
 
             // Content
@@ -367,9 +372,10 @@ fileprivate struct CalendarCellView: View {
 
                 // Nepali day number
                 Text(nepaliLabel)
-                    .font(.system(size: 18, weight: isHighlighted ? .semibold : .regular, design: .rounded))
+                    .font(.system(size: 18, weight: cell.isToday ? .semibold : .regular, design: .rounded))
                     .foregroundStyle(
-                        isHighlighted ? Color.white :
+                        cell.isToday ? Color.white :
+                        isSelected ? Color.secondary :
                         (cell.isCurrent && (index % 7 == 6 || cell.isHoliday)) ? Color.red :
                         (cell.isCurrent ? Color.primary : Color.secondary.opacity(0.3))
                     )
@@ -383,7 +389,8 @@ fileprivate struct CalendarCellView: View {
                         Text(englishDay)
                             .font(.system(size: 10, weight: .semibold, design: .rounded))
                             .foregroundStyle(
-                                isHighlighted ? Color.white.opacity(0.9) :
+                                cell.isToday ? Color.white.opacity(0.9) :
+                                isSelected ? Color.secondary :
                                 (cell.isCurrent ? Color.secondary : Color.secondary.opacity(0.2))
                             )
                             .padding(.trailing, 3)

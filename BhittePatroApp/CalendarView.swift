@@ -15,11 +15,12 @@ struct CalendarView: View {
     @Binding var adDate: Date
     @Binding var bsDate: BSDate
     @Binding var viewMode: CalendarViewMode
-    @ObservedObject var nepaliCalendar = NepaliCalendar.shared
 
     private let rowSpacing: CGFloat = 2
     private let cellCornerRadius: CGFloat = 6
     private let numberOfRows = 6  // Always show 6 rows
+    
+    @State private var monthTransitionPhase: Double = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -33,7 +34,7 @@ struct CalendarView: View {
 
             // Calendar grid with directional slide animation
             calendarGridSection
-                .animation(.linear(duration: 0.3), value: displayMonth)
+                .animation(.easeInOut(duration: 0.25), value: displayMonth)
 
             // Selected date info
             selectedDateSection
@@ -69,16 +70,16 @@ struct CalendarView: View {
                         }
                     }
                 } label: {
-                    HStack {
-                        Spacer()
+                    ZStack {
+                        Color.clear
                         Text(NepaliCalendar.shared.months[displayMonth - 1])
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.primary)
-                        Spacer()
                     }
-                    .frame(width: 140)
+                    .frame(width: 120, height: 32)
                 }
                 .menuStyle(.borderlessButton)
+                .contentTransition(.numericText())
 
                 // Year selector
                 Menu {
@@ -94,12 +95,16 @@ struct CalendarView: View {
                         }
                     }
                 } label: {
-                    Text(NepaliCalendar.shared.toNepaliDigits(displayYear))
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.primary)
-                        .frame(width: 65, alignment: .center)
+                    ZStack {
+                        Color.clear
+                        Text(NepaliCalendar.shared.toNepaliDigits(displayYear))
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.primary)
+                    }
+                    .frame(width: 65, height: 32)
                 }
                 .menuStyle(.borderlessButton)
+                .contentTransition(.numericText())
 
                 Button(action: { navigate(1) }) {
                     Image(systemName: "chevron.right")
@@ -151,7 +156,7 @@ struct CalendarView: View {
             ForEach(NepaliCalendar.shared.weekDays, id: \.self) { day in
                 Text(day)
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(day == "आइत" || day == "शनि" ? .red : .secondary)
+                    .foregroundColor(day == "शनि" ? .red : .secondary)
                     .frame(maxWidth: .infinity)
             }
         }
@@ -192,40 +197,91 @@ struct CalendarView: View {
             }
             .frame(height: CGFloat(numberOfRows) * cellHeight + CGFloat(numberOfRows - 1) * rowSpacing)
         }
+        .animation(.easeInOut(duration: 0.2), value: displayMonth)
     }
 
     // MARK: - Selected Date Section
     private var selectedDateSection: some View {
         Group {
-            if let sel = selectedDate {
-                VStack(alignment: .leading, spacing: 4) {
-                    // Date label
-                    Text("\(NepaliCalendar.shared.months[sel.month - 1]) \(NepaliCalendar.shared.toNepaliDigits(sel.day)), \(NepaliCalendar.shared.toNepaliDigits(sel.year))")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.secondary)
+               if let sel = selectedDate {
 
-                    // Holiday and Tithi
-                    HStack(alignment: .center, spacing: 8) {
-                        if let hText = NepaliCalendar.shared.holidayText(year: sel.year, month: sel.month, day: sel.day) {
-                            Text(hText)
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(.red)
-                                .lineLimit(1)
-                        }
+                   let isToday = today?.year == sel.year && today?.month == sel.month && today?.day == sel.day
+                   
+                   let upcoming = isToday ? NepaliCalendar.shared.nextHoliday(
+                       from: sel.year,
+                       month: sel.month,
+                       day: sel.day
+                   ) : nil
 
-                        if let tithi = NepaliCalendar.shared.tithiText(year: sel.year, month: sel.month, day: sel.day) {
-                            Text(tithi)
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color.secondary.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
-            } else {
+                   VStack(alignment: .leading, spacing: 6) {
+
+                       HStack {
+                           if isToday {
+                               Text("Today")
+                                   .font(.system(size: 12, weight: .semibold))
+                                   .foregroundStyle(.secondary)
+                               Text("\(NepaliCalendar.shared.months[sel.month - 1]) \(NepaliCalendar.shared.toNepaliDigits(sel.day))")
+                                   .font(.system(size: 12, weight: .semibold))
+                                   .foregroundStyle(.secondary)
+                           } else {
+                               Text("\(NepaliCalendar.shared.months[sel.month - 1]) \(NepaliCalendar.shared.toNepaliDigits(sel.day))")
+                                   .font(.system(size: 12, weight: .semibold))
+                                   .foregroundStyle(.secondary)
+                           }
+
+                           Spacer()
+
+                           if isToday {
+                               Text("Upcoming")
+                                   .font(.system(size: 12, weight: .semibold))
+                                   .foregroundStyle(.secondary)
+                           }
+                       }
+
+                       HStack {
+                           // LEFT SIDE
+                           HStack(spacing: 6) {
+                               if let hText = NepaliCalendar.shared.holidayText(
+                                   year: sel.year,
+                                   month: sel.month,
+                                   day: sel.day
+                               ) {
+                                   Text(hText)
+                                       .foregroundStyle(.red)
+                               }
+
+                               if let tithi = NepaliCalendar.shared.tithiText(
+                                   year: sel.year,
+                                   month: sel.month,
+                                   day: sel.day
+                               ) {
+                                   Text(tithi)
+                                       .foregroundStyle(.secondary)
+                               }
+                           }
+                           .font(.system(size: 13, weight: .medium))
+                           .lineLimit(1)
+
+                           Spacer()
+
+                           // RIGHT SIDE (Upcoming)
+                           if let upcoming = upcoming {
+                               Text("\(upcoming.text) \(NepaliCalendar.shared.toNepaliDigits(upcoming.daysAway)) दिन पछि ")
+                                   .font(.system(size: 13, weight: .medium))
+                                   .foregroundStyle(.blue)
+                                   .lineLimit(1)
+                           }
+                       }
+                   }
+                   .frame(maxWidth: .infinity, alignment: .leading)
+                   .padding(.horizontal, 12)
+                   .padding(.vertical, 8)
+                   .background(
+                       Color.secondary.opacity(0.05),
+                       in: RoundedRectangle(cornerRadius: 8)
+                   )
+               }
+            else {
                 // Placeholder when no date selected
                 Text("Select a date")
                     .font(.system(size: 12, weight: .medium))
@@ -260,7 +316,7 @@ struct CalendarView: View {
         else if m > 12 { m = 1; y += 1 }
         guard y >= 2060 && y <= 2085 else { return }
         if NepaliCalendar.shared.daysInMonth(year: y, month: m) > 0 {
-            withAnimation(.easeInOut(duration: 0.18)) {
+            withAnimation(.easeInOut(duration: 0.2)) {
                 displayMonth = m
                 displayYear = y
                 if selectedDate == nil {
@@ -283,11 +339,15 @@ struct CalendarView: View {
         // Previous month days
         for i in 0..<firstWeekday {
             let day = daysInPrevMonth - (firstWeekday - 1) + i
+            let nepaliDay = NepaliCalendar.shared.toNepaliDigits(day)
+            let englishDay = getEnglishDay(year: prevYear, month: prevMonth, day: day)
             result.append(CellModel(
                 bsYear: prevYear, bsMonth: prevMonth, bsDay: day,
                 isCurrent: false,
                 isToday: false,
-                isHoliday: false
+                isHoliday: false,
+                englishDay: englishDay,
+                nepaliDay: nepaliDay
             ))
         }
 
@@ -295,38 +355,64 @@ struct CalendarView: View {
         for day in 1...daysInMonth {
             let isToday = today?.day == day && today?.month == displayMonth && today?.year == displayYear
             let isHoliday = NepaliCalendar.shared.holidayText(year: displayYear, month: displayMonth, day: day) != nil
+            let nepaliDay = NepaliCalendar.shared.toNepaliDigits(day)
+            let englishDay = getEnglishDay(year: displayYear, month: displayMonth, day: day)
             result.append(CellModel(
                 bsYear: displayYear, bsMonth: displayMonth, bsDay: day,
                 isCurrent: true,
                 isToday: isToday,
-                isHoliday: isHoliday
+                isHoliday: isHoliday,
+                englishDay: englishDay,
+                nepaliDay: nepaliDay
             ))
         }
 
         // Next month days - fill remaining to always have 42 cells (6 rows x 7 days)
-        let totalCells = result.count
-        let remainingCells = 42 - totalCells
+        let remainingCells = 42 - result.count
         for day in 1...remainingCells {
+            let nepaliDay = NepaliCalendar.shared.toNepaliDigits(day)
+            let englishDay = getEnglishDay(year: nextYear, month: nextMonth, day: day)
             result.append(CellModel(
                 bsYear: nextYear, bsMonth: nextMonth, bsDay: day,
                 isCurrent: false,
                 isToday: false,
-                isHoliday: false
+                isHoliday: false,
+                englishDay: englishDay,
+                nepaliDay: nepaliDay
             ))
         }
 
         return result
     }
+    
+    private func getEnglishDay(year: Int, month: Int, day: Int) -> String {
+        guard let ad = NepaliCalendar.shared.convertToADDate(from: BSDate(year: year, month: month, day: day)) else {
+            return ""
+        }
+        let calendarDay = Calendar(identifier: .gregorian).component(.day, from: ad)
+        return String(calendarDay)
+    }
 }
 
 // MARK: - Cell Model
-fileprivate struct CellModel {
+fileprivate struct CellModel: Equatable {
     let bsYear: Int
     let bsMonth: Int
     let bsDay: Int
     let isCurrent: Bool
     let isToday: Bool
     let isHoliday: Bool
+    let englishDay: String
+    let nepaliDay: String
+    
+    static func == (lhs: CellModel, rhs: CellModel) -> Bool {
+        return lhs.bsYear == rhs.bsYear &&
+               lhs.bsMonth == rhs.bsMonth &&
+               lhs.bsDay == rhs.bsDay &&
+               lhs.isCurrent == rhs.isCurrent &&
+               lhs.isToday == rhs.isToday &&
+               lhs.isHoliday == rhs.isHoliday
+    }
 }
 
 // MARK: - Calendar Cell View
@@ -338,7 +424,7 @@ fileprivate struct CalendarCellView: View {
     let selectedDate: BSDate?
     let displayYear: Int
     let displayMonth: Int
-    
+
     @State private var isCurrentMonth = false
 
     private let cellCornerRadius: CGFloat = 6
@@ -351,16 +437,6 @@ fileprivate struct CalendarCellView: View {
             return false
         }()
 
-        let nepaliLabel = NepaliCalendar.shared.toNepaliDigits(cell.bsDay)
-        let englishDay: String = {
-            if let ad = NepaliCalendar.shared.convertToADDate(from: BSDate(year: cell.bsYear, month: cell.bsMonth, day: cell.bsDay)) {
-                let day = Calendar(identifier: .gregorian).component(.day, from: ad)
-                return String(day)
-            } else {
-                return ""
-            }
-        }()
-        
         let animationDelay = Double(index) * 0.003
 
         ZStack {
@@ -378,7 +454,7 @@ fileprivate struct CalendarCellView: View {
                 Spacer(minLength: 0)
 
                 // Nepali day number
-                Text(nepaliLabel)
+                Text(cell.nepaliDay)
                     .font(.system(size: 18, weight: cell.isToday ? .semibold : .regular, design: .rounded))
                     .foregroundStyle(
                         cell.isToday ? Color.white :
@@ -393,8 +469,8 @@ fileprivate struct CalendarCellView: View {
                 // English day number
                 HStack {
                     Spacer(minLength: 0)
-                    if !englishDay.isEmpty {
-                        Text(englishDay)
+                    if !cell.englishDay.isEmpty {
+                        Text(cell.englishDay)
                             .font(.system(size: 10, weight: .semibold, design: .rounded))
                             .foregroundStyle(
                                 cell.isToday ? Color.white.opacity(0.9) :
@@ -440,3 +516,4 @@ fileprivate struct CalendarCellView: View {
         }
     }
 }
+

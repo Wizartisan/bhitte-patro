@@ -10,7 +10,6 @@ import SwiftUI
 struct TodayView: View {
     var currentDate: Date
     @Binding var viewMode: CalendarViewMode
-    @ObservedObject var nepaliCalendar = NepaliCalendar.shared
 
     private var todayBS: BSDate {
         NepaliCalendar.shared.convertToBSDate(from: currentDate) ?? BSDate(year: 2081, month: 1, day: 1)

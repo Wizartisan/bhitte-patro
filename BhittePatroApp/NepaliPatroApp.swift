@@ -28,27 +28,70 @@ struct CalendarData: Codable {
 
 class NepaliCalendar: ObservableObject {
     static let shared = NepaliCalendar()
-    
-    @Published var dataUpdated = UUID()
-    
+
     let nepaliNumbers = ["०", "१", "२", "३", "४", "५", "६", "७", "८", "९"]
     let weekDays = ["आइत", "सोम", "मंगल", "बुध", "बिही", "शुक्र", "शनि"]
     let months = ["बैशाख", "जेठ", "असार", "साउन", "भदौ", "असोज", "कात्तिक", "मंसिर", "पुष", "माघ", "फागुन", "चैत"]
     let tithiNames = ["", "प्रतिपदा", "द्वितीया", "तृतीया", "चतुर्थी", "पञ्चमी", "षष्ठी", "सप्तमी", "अष्टमी", "नवमी", "दशमी", "एकादशी", "द्वादशी", "त्रयोदशी", "चतुर्दशी", "पूर्णिमा/औँसी"]
-    
+
     // Anchor: 2060/01/01 BS = 2003/04/14 AD (Monday = 1)
     private let anchorYear = 2060
     private let anchorMonth = 1
     private let anchorDay = 1
     private let anchorWeekday = 1
-    
+
     private var monthDaysData: [Int: [Int]] = [:]
     private var holidays: [Int: [Int: [Int: [String]]]] = [:]
     private var tithi: [Int: [Int: [Int]]] = [:]
+
+    // Cache for Nepali number conversions
+    private var nepaliNumberCache: [Int: String] = [:]
+    private let nepaliNumberCacheLock = NSLock()
     
     
     init() {
         loadCalendarData()
+    }
+    
+    func nextHoliday(from year: Int, month: Int, day: Int)
+    -> (text: String, daysAway: Int, date: BSDate)? {
+
+        let current = BSDate(year: year, month: month, day: day)
+
+        for i in 1...60 {
+            if let next = addDays(to: current, days: i) {
+                if let holiday = holidayText(year: next.year, month: next.month, day: next.day) {
+                    return (holiday, i, next)
+                }
+            }
+        }
+        return nil
+    }
+    
+    private func addDays(to date: BSDate, days: Int) -> BSDate? {
+        var y = date.year
+        var m = date.month
+        var d = date.day + days
+        
+        // Ensure starting year data exists
+        guard monthDaysData[y] != nil else { return nil }
+        
+        while true {
+            guard let dim = monthDaysData[y]?[m - 1] else { return nil }
+            if d <= dim {
+                break
+            } else {
+                d -= dim
+                m += 1
+                if m > 12 {
+                    m = 1
+                    y += 1
+                    // Stop if beyond known data range
+                    if monthDaysData[y] == nil { return nil }
+                }
+            }
+        }
+        return BSDate(year: y, month: m, day: d)
     }
     
     func loadCalendarData() {
@@ -108,10 +151,6 @@ class NepaliCalendar: ObservableObject {
                     }
                     self.tithi[year] = yearTithi
                 }
-            }
-            
-            DispatchQueue.main.async {
-                self.dataUpdated = UUID()
             }
         } catch {
             print("Error loading/decoding calendar.json: \(error)")
@@ -205,10 +244,19 @@ class NepaliCalendar: ObservableObject {
     }
     
     func toNepaliDigits(_ number: Int) -> String {
-        return String(number).compactMap { char in
+        // Check cache first
+        if let cached = nepaliNumberCacheLock.withLock({ nepaliNumberCache[number] }) {
+            return cached
+        }
+        
+        let result = String(number).compactMap { char in
             if let d = char.wholeNumberValue { return nepaliNumbers[d] }
             return String(char)
         }.joined()
+        
+        // Cache the result
+        nepaliNumberCacheLock.withLock { nepaliNumberCache[number] = result }
+        return result
     }
 }
 
@@ -344,11 +392,10 @@ struct DateStepperRow: View {
 }
 // MARK: - View
 struct VCenterView: View {
-    
+
     @EnvironmentObject var dateUpdater: DateUpdater
-    @ObservedObject var nepaliCalendar = NepaliCalendar.shared
     @AppStorage("DefaultCalendarViewMode") private var defaultMode: String = "calendar"
-    
+
     @State private var displayYear: Int
     @State private var displayMonth: Int
     @State private var selectedDate: BSDate?

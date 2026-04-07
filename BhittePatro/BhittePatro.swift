@@ -279,10 +279,7 @@ struct LargeWidgetView: View {
 
                 Text("आज: \(NepaliCalendar.shared.toNepaliDigits(today.day))")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Color.red, in: Capsule())
+                    .foregroundColor(.red)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
@@ -297,7 +294,7 @@ struct LargeWidgetView: View {
                 ForEach(NepaliCalendar.shared.weekDays, id: \.self) { day in
                     Text(day)
                         .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(day == "आइत" || day == "शनि" ? .red : .secondary)
+                        .foregroundColor(day == "शनि" ? .red : .secondary)
                         .frame(maxWidth: .infinity)
                 }
             }

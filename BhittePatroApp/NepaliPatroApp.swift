@@ -439,13 +439,17 @@ struct VCenterView: View {
         .onReceive(NotificationCenter.default.publisher(for: .didChangeDefaultViewMode)) { notification in
             if let mode = notification.userInfo?["mode"] as? String {
                 withAnimation(.easeInOut(duration: 0.2)) {
-                    viewMode = .settings
+                    if mode == "settings" {
+                        viewMode = .settings
+                    } else if let newMode = CalendarViewMode(rawValue: mode) {
+                        viewMode = newMode
+                    }
                 }
             }
         }
         .onChange(of: defaultMode) { _, newValue in
             if let newMode = CalendarViewMode(rawValue: newValue), newMode != .settings {
-                withAnimation {
+                withAnimation(.easeInOut(duration: 0.2)) {
                     viewMode = newMode
                 }
             }

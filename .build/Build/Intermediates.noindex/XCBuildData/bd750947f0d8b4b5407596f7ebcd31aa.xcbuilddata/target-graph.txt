@@ -1,0 +1,4 @@
+Target dependency graph (2 targets)
+Target 'BhittePatro' in project 'NepaliPatro'
+➜ Explicit dependency on target 'BhittePatroExtension' in project 'NepaliPatro'
+Target 'BhittePatroExtension' in project 'NepaliPatro' (no dependencies)

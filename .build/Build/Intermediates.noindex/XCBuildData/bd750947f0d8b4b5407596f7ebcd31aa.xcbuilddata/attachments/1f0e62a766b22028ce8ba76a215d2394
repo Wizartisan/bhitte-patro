@@ -1,0 +1,59 @@
+{
+  "" : {
+    "diagnostics" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatroExtension-primary.dia",
+    "emit-module-dependencies" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatroExtension-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatroExtension-primary-emit-module.dia",
+    "pch" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatroExtension-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatroExtension-primary.swiftdeps"
+  },
+  "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/GeneratedAssetSymbols~partial.swiftmodule"
+  },
+  "/Users/pranabkc/dev/bhitte-patro/BhittePatro/AppIntent.swift" : {
+    "const-values" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/AppIntent.swiftconstvalues",
+    "dependencies" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/AppIntent.d",
+    "diagnostics" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/AppIntent.dia",
+    "index-unit-output-path" : "/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/AppIntent.o",
+    "llvm-bc" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/AppIntent.bc",
+    "object" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/AppIntent.o",
+    "swift-dependencies" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/AppIntent.swiftdeps",
+    "swiftmodule" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/AppIntent~partial.swiftmodule"
+  },
+  "/Users/pranabkc/dev/bhitte-patro/BhittePatro/BhittePatro.swift" : {
+    "const-values" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatro.swiftconstvalues",
+    "dependencies" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatro.d",
+    "diagnostics" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatro.dia",
+    "index-unit-output-path" : "/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatro.o",
+    "llvm-bc" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatro.bc",
+    "object" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatro.o",
+    "swift-dependencies" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatro.swiftdeps",
+    "swiftmodule" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatro~partial.swiftmodule"
+  },
+  "/Users/pranabkc/dev/bhitte-patro/BhittePatro/BhittePatroBundle.swift" : {
+    "const-values" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatroBundle.swiftconstvalues",
+    "dependencies" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatroBundle.d",
+    "diagnostics" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatroBundle.dia",
+    "index-unit-output-path" : "/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatroBundle.o",
+    "llvm-bc" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatroBundle.bc",
+    "object" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatroBundle.o",
+    "swift-dependencies" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatroBundle.swiftdeps",
+    "swiftmodule" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatroBundle~partial.swiftmodule"
+  },
+  "/Users/pranabkc/dev/bhitte-patro/BhittePatro/BhittePatroControl.swift" : {
+    "const-values" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatroControl.swiftconstvalues",
+    "dependencies" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatroControl.d",
+    "diagnostics" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatroControl.dia",
+    "index-unit-output-path" : "/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatroControl.o",
+    "llvm-bc" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatroControl.bc",
+    "object" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatroControl.o",
+    "swift-dependencies" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatroControl.swiftdeps",
+    "swiftmodule" : "/Users/pranabkc/dev/bhitte-patro/.build/Build/Intermediates.noindex/NepaliPatro.build/Debug/BhittePatroExtension.build/Objects-normal/arm64/BhittePatroControl~partial.swiftmodule"
+  }
+}

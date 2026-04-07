@@ -25,6 +25,13 @@ struct TodayView: View {
         return "\(monthName) \(year)"
     }
 
+    private var englishDateText: String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "MMMM d, yyyy"
+        return formatter.string(from: currentDate)
+    }
+
     private var tithiText: String? {
         NepaliCalendar.shared.tithiText(year: todayBS.year, month: todayBS.month, day: todayBS.day)
     }
@@ -35,60 +42,80 @@ struct TodayView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
             headerSection
-                .frame(height: 44)
+                .frame(height: 30)
 
-            // Divider
-            Divider()
-
-            // Main content
-            VStack(spacing: 6) {
+            VStack(spacing: 10) {
                 Spacer(minLength: 0)
 
-                // Day number
-                Text(nepaliDay)
-                    .font(.system(size: 48, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                VStack(spacing: 10) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color.red.opacity(0.18),
+                                        Color.red.opacity(0.08)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                    .stroke(Color.red.opacity(0.10))
+                            )
+                            .frame(width: 94, height: 94)
 
-                // Month and year
-                Text(nepaliMonthYear)
-                    .font(.system(size: 18, weight: .medium))
+                        Text(nepaliDay)
+                            .font(.system(size: 44, weight: .bold, design: .rounded))
+                            .foregroundStyle(.red)
+                    }
 
-                // Holiday
-                if let holiday = holidayText, !holiday.isEmpty {
-                    Text(holiday)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.red)
-                        .multilineTextAlignment(.center)
+                    VStack(spacing: 4) {
+                        Text(nepaliMonthYear)
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+
+                        Text(englishDateText)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
-                // Tithi
+                if let holiday = holidayText, !holiday.isEmpty {
+                    Text(holiday)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(Color.red.opacity(0.08), in: Capsule())
+                }
+
                 if let tithi = tithiText, !tithi.isEmpty {
                     Text(tithi)
-                        .font(.system(size: 12, weight: .regular))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                 }
 
                 Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 14)
         }
-        .padding(12)
+        .padding(10)
     }
 
     // MARK: - Header Section
     private var headerSection: some View {
-        ZStack {
-            Text("आज")
-                .font(.system(size: 24, weight: .bold))
-                .multilineTextAlignment(.center)
-            
+        ZStack(alignment: .center) {
             HStack {
+                Color.clear.frame(width: 28, height: 28)
+
                 Spacer()
-                
-                // Settings button -> switch to settings view
+
                 Button {
                     NotificationCenter.default.post(
                         name: .didChangeDefaultViewMode,
@@ -104,6 +131,10 @@ struct TodayView: View {
                 }
                 .buttonStyle(.plain)
             }
+
+            Text("आज")
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundStyle(.primary)
         }
         .frame(maxWidth: .infinity)
     }

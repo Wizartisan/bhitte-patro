@@ -22,11 +22,51 @@ struct CalendarView: View {
     
     @State private var monthTransitionPhase: Double = 0
 
+    private var displayMonthName: String {
+        NepaliCalendar.shared.months[displayMonth - 1]
+    }
+
+    private var displayYearText: String {
+        NepaliCalendar.shared.toNepaliDigits(displayYear)
+    }
+
+    private var englishMonthLabel: String? {
+        let daysInMonth = NepaliCalendar.shared.daysInMonth(year: displayYear, month: displayMonth)
+        guard
+            let startDate = NepaliCalendar.shared.convertToADDate(from: BSDate(year: displayYear, month: displayMonth, day: 1)),
+            let endDate = NepaliCalendar.shared.convertToADDate(from: BSDate(year: displayYear, month: displayMonth, day: daysInMonth))
+        else {
+            return nil
+        }
+
+        let monthFormatter = DateFormatter()
+        monthFormatter.locale = Locale(identifier: "en_US_POSIX")
+        monthFormatter.dateFormat = "MMMM"
+
+        let yearFormatter = DateFormatter()
+        yearFormatter.locale = Locale(identifier: "en_US_POSIX")
+        yearFormatter.dateFormat = "yyyy"
+
+        let startMonth = monthFormatter.string(from: startDate)
+        let endMonth = monthFormatter.string(from: endDate)
+        let startYear = yearFormatter.string(from: startDate)
+        let endYear = yearFormatter.string(from: endDate)
+
+        if startMonth == endMonth && startYear == endYear {
+            return "\(startMonth) \(startYear)"
+        }
+        if startYear == endYear {
+            return "\(startMonth)-\(endMonth) \(startYear)"
+        }
+        return "\(startMonth) \(startYear)-\(endMonth) \(endYear)"
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // Header Section
             headerSection
-                .frame(height: 56)
+                .frame(height: 38)
+                .padding(.bottom, 10)
 
             // Weekday headers
             weekdaySection
@@ -44,114 +84,129 @@ struct CalendarView: View {
 
     // MARK: - Header Section
     private var headerSection: some View {
-        HStack(spacing: 8) {
-            // Month and Year selector (left side)
-            HStack(spacing: 4) {
-                Button(action: { navigate(-1) }) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.red)
-                        .frame(width: 32, height: 32)
-                        .background(Circle().fill(Color.red.opacity(0.1)))
-                }
-                .buttonStyle(.plain)
+        VStack(spacing: 0) {
+            ZStack {
+                HStack(spacing: 4) {
+                    Button(action: { navigate(-1) }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.red)
+                            .frame(width: 40, height: 32)
+                            .background(Color.red.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
 
-                // Month selector
-                Menu {
-                    ForEach(1...12, id: \.self) { month in
-                        Button(action: { displayMonth = month }) {
-                            HStack {
-                                Text(NepaliCalendar.shared.months[month - 1])
-                                if displayMonth == month {
-                                    Spacer()
-                                    Image(systemName: "checkmark")
+                    Divider()
+                        .frame(height: 14)
+
+                    Menu {
+                        ForEach(1...12, id: \.self) { month in
+                            Button(action: { displayMonth = month }) {
+                                HStack {
+                                    Text(NepaliCalendar.shared.months[month - 1])
+                                    if displayMonth == month {
+                                        Spacer()
+                                        Image(systemName: "checkmark")
+                                    }
                                 }
                             }
                         }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(displayMonthName)
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundStyle(.secondary)
+                        }
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.primary)
                     }
-                } label: {
-                    ZStack {
-                        Color.clear
-                        Text(NepaliCalendar.shared.months[displayMonth - 1])
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.primary)
-                    }
-                    .frame(width: 120, height: 32)
-                }
-                .menuStyle(.borderlessButton)
-                .contentTransition(.numericText())
+                    .menuStyle(.borderlessButton)
+                    .menuIndicator(.hidden)
+                    .contentTransition(.numericText())
 
-                // Year selector
-                Menu {
-                    ForEach(2060...2085, id: \.self) { year in
-                        Button(action: { displayYear = year }) {
-                            HStack {
-                                Text(NepaliCalendar.shared.toNepaliDigits(year))
-                                if displayYear == year {
-                                    Spacer()
-                                    Image(systemName: "checkmark")
+                    Divider()
+                        .frame(height: 14)
+
+                    Menu {
+                        ForEach(2060...2085, id: \.self) { year in
+                            Button(action: { displayYear = year }) {
+                                HStack {
+                                    Text(NepaliCalendar.shared.toNepaliDigits(year))
+                                    if displayYear == year {
+                                        Spacer()
+                                        Image(systemName: "checkmark")
+                                    }
                                 }
                             }
                         }
-                    }
-                } label: {
-                    ZStack {
-                        Color.clear
-                        Text(NepaliCalendar.shared.toNepaliDigits(displayYear))
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.primary)
-                    }
-                    .frame(width: 65, height: 32)
-                }
-                .menuStyle(.borderlessButton)
-                .contentTransition(.numericText())
-
-                Button(action: { navigate(1) }) {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.red)
-                        .frame(width: 32, height: 32)
-                        .background(Circle().fill(Color.red.opacity(0.1)))
-                }
-                .buttonStyle(.plain)
-            }
-
-            Spacer(minLength: 0)
-
-            // Right side controls: आज button (only if not in current month) + Settings
-            HStack(spacing: 4) {
-                // आज button (only if not in current month)
-                if let today = today, !(today.year == displayYear && today.month == displayMonth) {
-                    Button("आज") {
-                        withAnimation {
-                            displayYear = today.year
-                            displayMonth = today.month
-                            selectedDate = today
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(displayYearText)
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundStyle(.secondary)
                         }
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.primary)
                     }
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.red)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color.red.opacity(0.1), in: Capsule())
+                    .menuStyle(.borderlessButton)
+                    .menuIndicator(.hidden)
+                    .contentTransition(.numericText())
+
+                    Divider()
+                        .frame(height: 14)
+
+                    Button(action: { navigate(1) }) {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.red)
+                            .frame(width: 40, height: 32)
+                            .background(Color.red.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .contentShape(Rectangle())
+                    }
                     .buttonStyle(.plain)
                 }
+                .padding(.horizontal, 2)
+                .frame(height: 32)
 
-                // Settings button -> switch to settings view
-                Button {
-                    NotificationCenter.default.post(
-                        name: .didChangeDefaultViewMode,
-                        object: nil,
-                        userInfo: ["mode": "settings"]
-                    )
-                } label: {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 32, height: 32)
-                        .background(Color.secondary.opacity(0.15), in: Circle())
+                HStack {
+                    if let today, !(today.year == displayYear && today.month == displayMonth) {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                displayYear = today.year
+                                displayMonth = today.month
+                                selectedDate = today
+                            }
+                        } label: {
+                            Image(systemName: "sun.max.fill")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(.red)
+                                .frame(width: 28, height: 28)
+                        }
+                        .background(Color.red.opacity(0.12), in: Capsule())
+                        .buttonStyle(.plain)
+                    } else {
+                        Color.clear.frame(width: 28, height: 28)
+                    }
+
+                    Spacer()
+
+                    Button {
+                        NotificationCenter.default.post(
+                            name: .didChangeDefaultViewMode,
+                            object: nil,
+                            userInfo: ["mode": "settings"]
+                        )
+                    } label: {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 28, height: 28)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
     }
@@ -274,7 +329,7 @@ struct CalendarView: View {
                            if let upcoming = upcoming {
                                Text("\(upcoming.text) \(NepaliCalendar.shared.toNepaliDigits(upcoming.daysAway)) दिन पछि ")
                                    .font(.system(size: 13, weight: .medium))
-                                   .foregroundStyle(.blue)
+                                   .foregroundStyle(.red)
                                    .lineLimit(1)
                            }
                        }
@@ -522,4 +577,3 @@ fileprivate struct CalendarCellView: View {
         }
     }
 }
-

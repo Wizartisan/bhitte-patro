@@ -1,0 +1,81 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Performance and Functional Tests
+        run: |
+          swift perf_test.swift
+          swift tests.swift
+
+  release:
+    needs: test
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build App
+        run: |
+          xcodebuild \
+            -project NepaliPatro.xcodeproj \
+            -scheme NepaliPatro \
+            -sdk macosx \
+            -configuration Release \
+            -derivedDataPath Build/ \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            clean build
+
+      - name: Prepare Release Asset
+        run: |
+          # Install create-dmg via npm as requested
+          npm install --global create-dmg
+
+          # Find the built app
+          APP_PATH=$(find Build/Build/Products/Release -name "BhittePatro.app" -maxdepth 1)
+          if [ -z "$APP_PATH" ]; then
+            APP_PATH=$(find Build -name "BhittePatro.app" -type d | head -n 1)
+          fi
+          
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: Could not find BhittePatro.app"
+            exit 1
+          fi
+          
+          DMG_NAME="BhittePatro-Online.dmg"
+          ZIP_NAME="BhittePatro-Online.dmg.zip"
+          
+          echo "Found app at $APP_PATH"
+          echo "Creating DMG: $DMG_NAME"
+          
+          # create-dmg <path-to-app> [destination-dir]
+          create-dmg "$APP_PATH" .
+          
+          # Find the created DMG and rename/zip it
+          ACTUAL_DMG=$(find . -name "*.dmg" -maxdepth 1 | head -n 1)
+          mv "$ACTUAL_DMG" "$DMG_NAME"
+          
+          echo "Zipping $DMG_NAME into $ZIP_NAME"
+          zip "$ZIP_NAME" "$DMG_NAME"
+          
+          echo "ASSET_NAME=$ZIP_NAME" >> $GITHUB_ENV
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ASSET_NAME }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -16,8 +16,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "3BB854972F6313090029AC28"
-               BuildableName = "NepaliPatro.app"
-               BlueprintName = "NepaliPatro"
+               BuildableName = "BhittePatro.app"
+               BlueprintName = "BhittePatro"
                ReferencedContainer = "container:NepaliPatro.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -50,8 +50,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "3BB854972F6313090029AC28"
-            BuildableName = "NepaliPatro.app"
-            BlueprintName = "NepaliPatro"
+            BuildableName = "BhittePatro.app"
+            BlueprintName = "BhittePatro"
             ReferencedContainer = "container:NepaliPatro.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -67,8 +67,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "3BB854972F6313090029AC28"
-            BuildableName = "NepaliPatro.app"
-            BlueprintName = "NepaliPatro"
+            BuildableName = "BhittePatro.app"
+            BlueprintName = "BhittePatro"
             ReferencedContainer = "container:NepaliPatro.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

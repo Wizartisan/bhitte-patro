@@ -391,7 +391,7 @@ struct VCenterView: View {
     @State private var bsDate = NepaliCalendar.shared.convertToBSDate(from: Date()) ?? BSDate(year: 2081, month: 1, day: 1)
     @State private var viewMode: CalendarViewMode
     @State private var previousMode: CalendarViewMode = .calendar
-    @State private var selectionTimer: Timer? = nil
+    @State private var lastInteractionDate: Date = Date()
 
     private var primaryMode: CalendarViewMode {
         CalendarViewMode(rawValue: defaultMode) ?? .calendar
@@ -426,7 +426,7 @@ struct VCenterView: View {
                     })
             }
         }
-        .frame(width: viewMode == .today ? 220 : viewMode == .settings ? 400 : 340, height: viewMode == .today ? 220 : viewMode == .settings ? 520 : 470)
+        .frame(width: viewMode == .today ? 220 : viewMode == .settings ? 340 : 340, height: viewMode == .today ? 220 : viewMode == .settings ? 470 : 470)
         .animation(.easeInOut(duration: 0.2), value: viewMode)
         .onReceive(NotificationCenter.default.publisher(for: .didChangeDefaultViewMode)) { notification in
             if let mode = notification.userInfo?["mode"] as? String {
@@ -446,18 +446,27 @@ struct VCenterView: View {
                 }
             }
         }
+        .onChange(of: displayMonth) { _, _ in
+            lastInteractionDate = Date()
+        }
+        .onChange(of: displayYear) { _, _ in
+            lastInteractionDate = Date()
+        }
         .onChange(of: selectedDate) { _, newValue in
-            selectionTimer?.invalidate()
-            selectionTimer = nil
-            
-            if let selected = newValue, let t = today, selected != t {
-                selectionTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: false) { _ in
-                    withAnimation {
-                        selectedDate = t
-                        displayYear = t.year
-                        displayMonth = t.month
-                    }
+            lastInteractionDate = Date()
+        }
+        .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
+            guard let t = today else { return }
+            let isOnToday = displayYear == t.year && displayMonth == t.month
+            let secondsSinceInteraction = Date().timeIntervalSince(lastInteractionDate)
+
+            if !isOnToday && secondsSinceInteraction > 120 {
+                withAnimation {
+                    displayYear = t.year
+                    displayMonth = t.month
+                    selectedDate = t
                 }
+                lastInteractionDate = Date()
             }
         }
         .onAppear {
@@ -487,8 +496,6 @@ struct VCenterView: View {
             }
         }
         .onDisappear {
-            selectionTimer?.invalidate()
-            selectionTimer = nil
         }
     }
 

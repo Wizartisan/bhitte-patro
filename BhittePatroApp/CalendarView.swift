@@ -84,139 +84,109 @@ struct CalendarView: View {
 
     // MARK: - Header Section
     private var headerSection: some View {
-        VStack(spacing: 0) {
-            ZStack {
-                HStack(spacing: 4) {
-                    Button(action: { navigate(-1) }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(.red)
-                            .frame(width: 34, height: 28)
-                            .background(Color.red.opacity(0.12), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
+        HStack(spacing: 0) {
+            Spacer(minLength: 36)
 
-                    Divider()
-                        .frame(height: 14)
-
-                    Menu {
-                        ForEach(1...12, id: \.self) { month in
-                            Button(action: { displayMonth = month }) {
-                                HStack {
-                                    Text(NepaliCalendar.shared.months[month - 1])
-                                    if displayMonth == month {
-                                        Spacer()
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Text(displayMonthName)
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 8, weight: .bold))
-                                .foregroundStyle(.secondary)
-                        }
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.primary)
-                    }
-                    .menuStyle(.borderlessButton)
-                    .menuIndicator(.hidden)
-                    .contentTransition(.numericText())
-
-                    Divider()
-                        .frame(height: 14)
-
-                    Menu {
-                        ForEach(2060...2085, id: \.self) { year in
-                            Button(action: { displayYear = year }) {
-                                HStack {
-                                    Text(NepaliCalendar.shared.toNepaliDigits(year))
-                                    if displayYear == year {
-                                        Spacer()
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Text(displayYearText)
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 8, weight: .bold))
-                                .foregroundStyle(.secondary)
-                        }
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.primary)
-                    }
-                    .menuStyle(.borderlessButton)
-                    .menuIndicator(.hidden)
-                    .contentTransition(.numericText())
-
-                    Divider()
-                        .frame(height: 14)
-
-                    Button(action: { navigate(1) }) {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(.red)
-                            .frame(width: 34, height: 28)
-                            .background(Color.red.opacity(0.12), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, 2)
-                .frame(height: 32)
-
-                HStack {
-                    if let today, !(today.year == displayYear && today.month == displayMonth) {
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                displayYear = today.year
-                                displayMonth = today.month
-                                selectedDate = today
-                            }
-                        } label: {
-                            // Prefer a clearer "today" icon. Options: calendar.badge.clock, target, scope
-                            // Using calendar.badge.clock for clarity. If you prefer text, see comment below.
-                            Image(systemName: "calendar.badge.clock")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(.red)
-                                .frame(width: 26, height: 26)
-                        }
-                        .background(Color.red.opacity(0.12), in: Capsule())
-                        .buttonStyle(.plain)
-
-                        // If you prefer text instead of icon, replace the label above with:
-                        // Text("आज")
-                        //     .font(.system(size: 12, weight: .semibold))
-                        //     .foregroundStyle(.red)
-                        //     .frame(height: 26)
-                        //     .padding(.horizontal, 8)
-                    } else {
-                        Color.clear.frame(width: 26, height: 26)
-                    }
-
-                    Spacer()
-
-                    Button {
-                        NotificationCenter.default.post(
-                            name: .didChangeDefaultViewMode,
-                            object: nil,
-                            userInfo: ["mode": "settings"]
-                        )
-                    } label: {
-                        Image(systemName: "gearshape")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.secondary)
-                            .frame(width: 28, height: 28)
-                    }
-                    .buttonStyle(.plain)
-                }
+            Button(action: { navigate(-1) }) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.red)
+                    .frame(width: 34, height: 28)
+                    .background(Color.red.opacity(0.12), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+
+            Divider()
+                .frame(height: 14)
+
+            Menu {
+                ForEach(1...12, id: \.self) { month in
+                    Button(action: { displayMonth = month }) {
+                        HStack {
+                            Text(NepaliCalendar.shared.months[month - 1])
+                            if displayMonth == month {
+                                Spacer()
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Text(displayMonthName)
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(.secondary)
+                }
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(.primary)
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .contentTransition(.numericText())
+
+            Divider()
+                .frame(height: 14)
+
+            Menu {
+                ForEach(2060...2085, id: \.self) { year in
+                    Button(action: { displayYear = year }) {
+                        HStack {
+                            Text(NepaliCalendar.shared.toNepaliDigits(year))
+                            if displayYear == year {
+                                Spacer()
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Text(displayYearText)
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(.secondary)
+                }
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(.primary)
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .contentTransition(.numericText())
+
+            Divider()
+                .frame(height: 14)
+
+            Button(action: { navigate(1) }) {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.red)
+                    .frame(width: 34, height: 28)
+                    .background(Color.red.opacity(0.12), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            Spacer(minLength: 36)
+        }
+        .padding(.horizontal, 2)
+        .frame(height: 32)
+        .overlay(alignment: .trailing) {
+            Button {
+                NotificationCenter.default.post(
+                    name: .didChangeDefaultViewMode,
+                    object: nil,
+                    userInfo: ["mode": "settings"]
+                )
+            } label: {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 28, height: 28)
+            }
+            .buttonStyle(.plain)
+            .padding(.trailing, 2)
         }
     }
 

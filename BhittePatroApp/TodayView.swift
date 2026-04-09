@@ -42,6 +42,8 @@ struct TodayView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            Color.clear.frame(height: 6)
+
             headerSection
                 .frame(height: 30)
 

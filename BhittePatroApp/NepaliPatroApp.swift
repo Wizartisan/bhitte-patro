@@ -442,6 +442,7 @@ struct VCenterView: View {
     @State private var viewMode: CalendarViewMode
     @State private var previousMode: CalendarViewMode = .calendar
     @State private var selectionTimer: Timer? = nil
+    @State private var isAISelection: Bool = false
 
     private var primaryMode: CalendarViewMode {
         CalendarViewMode(rawValue: defaultMode) ?? .calendar
@@ -465,7 +466,7 @@ struct VCenterView: View {
             // Main Content
             switch viewMode {
                 case .calendar:
-                    CalendarView(displayYear: $displayYear, displayMonth: $displayMonth, selectedDate: $selectedDate, today: $today, adDate: $adDate, bsDate: $bsDate, viewMode: $viewMode)
+                    CalendarView(displayYear: $displayYear, displayMonth: $displayMonth, selectedDate: $selectedDate, today: $today, adDate: $adDate, bsDate: $bsDate, viewMode: $viewMode, isAISelection: $isAISelection)
                 case .today:
                     TodayView(currentDate: dateUpdater.currentDate, viewMode: $viewMode)
                 case .settings:
@@ -492,6 +493,17 @@ struct VCenterView: View {
                     } else if let newMode = CalendarViewMode(rawValue: mode) {
                         viewMode = newMode
                     }
+                }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .didSelectCalendarDate)) { notification in
+            if let date = notification.object as? BSDate {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    viewMode = .calendar
+                    selectedDate = date
+                    displayYear = date.year
+                    displayMonth = date.month
+                    isAISelection = true
                 }
             }
         }

@@ -90,36 +90,10 @@ enum MessagePart: Hashable {
 
 struct ChatBubble: View {
     let message: ChatMessage
-    let onOptionTapped: (String) -> Void
     
     var body: some View {
         VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
             MessageContentView(text: message.text, isUser: message.isUser)
-            
-            if !message.options.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForEach(message.options, id: \.self) { option in
-                            Button(action: { onOptionTapped(option) }) {
-                                Text(option)
-                                    .font(.system(size: 11, weight: .medium))
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 5)
-                                    .background(Color.blue.opacity(0.1))
-                                    .foregroundStyle(.blue)
-                                    .clipShape(Capsule())
-                                    .overlay(
-                                        Capsule()
-                                            .stroke(Color.blue.opacity(0.2), lineWidth: 0.5)
-                                    )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.horizontal, 2)
-                    .padding(.top, 2)
-                }
-            }
         }
         .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
         .padding(.horizontal, 12)
@@ -148,6 +122,7 @@ struct MessageContentView: View {
                     .foregroundStyle(isUser ? .white : .primary)
                     .multilineTextAlignment(isUser ? .trailing : .leading)
                     .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             
             // Show date parts on a new row
@@ -157,16 +132,18 @@ struct MessageContentView: View {
             }
             
             if !dateParts.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
+                ScrollView(.horizontal, showsIndicators: true) {
                     HStack(spacing: 10) {
                         ForEach(dateParts, id: \.self) { date in
                             DateRectangleView(date: date)
                         }
                     }
-                    .padding(.vertical, 2)
+                    .padding(.vertical, 4)
+                    .padding(.horizontal, 2)
                 }
             }
         }
+        .frame(minWidth: 20, maxWidth: 280, alignment: isUser ? .trailing : .leading)
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .background(
@@ -295,6 +272,10 @@ struct DateRectangleView: View {
             }
             .frame(width: 46, height: 46)
         }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            NotificationCenter.default.post(name: .didSelectCalendarDate, object: date)
+        }
     }
 }
 
@@ -302,6 +283,7 @@ struct DateRectangleView: View {
 struct AIChatView: View {
     @State private var messages: [ChatMessage]
     @State private var inputText: String = ""
+    @State private var pendingOptions: [String] = []
     var onDismiss: () -> Void
     
     init(onDismiss: @escaping () -> Void) {
@@ -326,7 +308,7 @@ struct AIChatView: View {
                 ScrollViewReader { proxy in
                     VStack(spacing: 18) {
                         ForEach(messages) { message in
-                            ChatBubble(message: message, onOptionTapped: handleOption)
+                            ChatBubble(message: message)
                                 .id(message.id)
                         }
                     }
@@ -337,6 +319,11 @@ struct AIChatView: View {
                         }
                     }
                     .onAppear {
+                        // On first load, if the last message had options, show them
+                        if let last = messages.last, !last.options.isEmpty, !last.isUser {
+                            pendingOptions = last.options
+                        }
+                        
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                             proxy.scrollTo(messages.last?.id, anchor: .bottom)
                         }
@@ -361,14 +348,14 @@ struct AIChatView: View {
             .buttonStyle(.plain)
             
             VStack(alignment: .leading, spacing: 0) {
-                Text("Calendar AI")
+                Text("Patro assistant")
                     .font(.system(size: 14, weight: .bold, design: .rounded))
                 HStack(spacing: 4) {
                     Circle()
                         .fill(.green)
                         .frame(width: 5, height: 5)
-                    Text("Always helpful")
-                        .font(.system(size: 10, weight: .medium))
+                    Text("सधैं तपाईंको सेवामा")
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -377,6 +364,7 @@ struct AIChatView: View {
             
             Button(action: {
                 ChatStorage.clear()
+                pendingOptions = []
                 withAnimation {
                     messages = [.init(text: "नमस्ते! How can I assist you with the calendar today?", isUser: false)]
                 }
@@ -397,41 +385,69 @@ struct AIChatView: View {
         VStack(spacing: 0) {
             Divider().opacity(0.3)
             HStack(spacing: 10) {
-                TextField("Ask about holidays, dates or plans...", text: $inputText)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 13))
-                    .padding(.horizontal, 12)
-                    .frame(height: 34)
-                    .background(
-                        RoundedRectangle(cornerRadius: 17, style: .continuous)
-                            .fill(Color(nsColor: .controlBackgroundColor))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 17, style: .continuous)
-                            .stroke(Color.secondary.opacity(0.2), lineWidth: 0.5)
-                    )
-                    .onSubmit {
-                        if !inputText.isEmpty {
-                            sendMessage(text: inputText)
+                if !pendingOptions.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(pendingOptions, id: \.self) { option in
+                                Button(action: { handleOption(option: option) }) {
+                                    Text(option)
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 8)
+                                        .background(Color.red)
+                                        .foregroundStyle(.white)
+                                        .clipShape(Capsule())
+                                        .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 4)
                     }
-                
-                Button(action: { sendMessage(text: inputText) }) {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 26))
-                        .foregroundStyle(inputText.isEmpty ? Color.secondary.opacity(0.3) : Color.red)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                } else {
+                    TextField("Ask about holidays, dates or plans...", text: $inputText)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 13))
+                        .padding(.horizontal, 12)
+                        .frame(height: 34)
+                        .background(
+                            RoundedRectangle(cornerRadius: 17, style: .continuous)
+                                .fill(Color(nsColor: .controlBackgroundColor))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 17, style: .continuous)
+                                .stroke(Color.secondary.opacity(0.2), lineWidth: 0.5)
+                        )
+                        .onSubmit {
+                            if !inputText.isEmpty {
+                                sendMessage(text: inputText)
+                            }
+                        }
+                        .transition(.opacity)
+                    
+                    Button(action: { sendMessage(text: inputText) }) {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.system(size: 26))
+                            .foregroundStyle(inputText.isEmpty ? Color.secondary.opacity(0.3) : Color.red)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(inputText.isEmpty)
                 }
-                .buttonStyle(.plain)
-                .disabled(inputText.isEmpty)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .background(VisualEffectView(material: .windowBackground, blendingMode: .withinWindow))
         }
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: pendingOptions.isEmpty)
     }
     
     private func handleOption(option: String) {
-        sendMessage(text: option, isSilent: true)
+        withAnimation {
+            pendingOptions = []
+        }
+        sendMessage(text: option, isSilent: false)
     }
     
     private func sendMessage(text: String, isSilent: Bool = false) {
@@ -444,7 +460,7 @@ struct AIChatView: View {
         
         inputText = ""
         
-        // Disable options on previous messages
+        // Disable options on previous messages in memory
         if messages.count > 1 {
             for i in 0..<(messages.count - 1) {
                 messages[i].options = []
@@ -465,6 +481,11 @@ struct AIChatView: View {
         
         let aiResponse = ChatMessage(text: responseText, options: options, isUser: false)
         messages.append(aiResponse)
+        
+        // If the new AI response has options, show them in the input bar
+        withAnimation {
+            pendingOptions = options
+        }
         
         // Persist history
         ChatStorage.save(messages)

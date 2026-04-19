@@ -16,6 +16,11 @@ class AIResponseGenerator {
     private var lastAction: AIAction?
     private var leaveDaysToTake: Int?
     private var conversionType: ConversionType?
+    
+    // For days between calculation
+    private var daysBetweenStart: (month: Int, day: Int)?
+    private var daysBetweenEnd: (month: Int, day: Int)?
+    private var daysBetweenYear: Int?
 
     private enum ConversationState {
         case idle
@@ -23,6 +28,8 @@ class AIResponseGenerator {
         case awaitingLeaveDayCount
         case awaitingConversionType
         case awaitingConversionDate
+        case awaitingDaysBetweenRange
+        case awaitingDaysBetweenYear
     }
     
     private enum ConversionType {
@@ -118,14 +125,128 @@ class AIResponseGenerator {
             return handleConversionTypeResponse(for: lowercasedInput)
         case .awaitingConversionDate:
             return handleConversionDateResponse(for: lowercasedInput)
+        case .awaitingDaysBetweenRange:
+            return handleDaysBetweenRangeResponse(for: lowercasedInput)
+        case .awaitingDaysBetweenYear:
+            return handleDaysBetweenYearResponse(for: lowercasedInput)
         case .idle:
             return handleIdleState(for: lowercasedInput)
         }
     }
     
+    private func handleDaysBetweenRangeResponse(for input: String) -> String {
+        let (start, end) = parseTwoDates(from: input)
+        
+        if let s = start, let e = end {
+            self.daysBetweenStart = s
+            self.daysBetweenEnd = e
+            
+            // Check if year was also provided in this message
+            var year: Int?
+            let yearMatches = input.lowercased().split(whereSeparator: { !$0.isNumber })
+            for match in yearMatches {
+                if match.count == 4, let y = Int(String(match)), y >= 2000 && y <= 2100 {
+                    year = y
+                    break
+                }
+            }
+            
+            if let y = year {
+                self.daysBetweenYear = y
+                let response = performDaysBetweenCalculation()
+                resetConversation()
+                return response
+            }
+            
+            conversationState = .awaitingDaysBetweenYear
+            return "Which year are we looking at? (e.g., 2083)"
+        } else {
+            return "Sure! Please provide the date range like 'Baishak 12 to Kartik 16' and I'll help you calculate the days."
+        }
+    }
+    
+    private func handleDaysBetweenYearResponse(for input: String) -> String {
+        let numericInput = input.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
+        if let year = Int(numericInput), year >= 2000 && year <= 2100 {
+            self.daysBetweenYear = year
+            let response = performDaysBetweenCalculation()
+            resetConversation()
+            return response
+        } else {
+            return "Please provide a valid year, like 2083."
+        }
+    }
+    
+    private func parseTwoDates(from input: String) -> (start: (month: Int, day: Int)?, end: (month: Int, day: Int)?) {
+        let separators = [" to ", " and ", " - "]
+        var parts: [String] = []
+        
+        for sep in separators {
+            let p = input.lowercased().components(separatedBy: sep)
+            if p.count == 2 {
+                parts = p
+                break
+            }
+        }
+        
+        guard parts.count == 2 else { return (nil, nil) }
+        
+        return (parseMonthDay(from: parts[0]), parseMonthDay(from: parts[1]))
+    }
+    
+    private func parseMonthDay(from input: String) -> (month: Int, day: Int)? {
+        let components = input.split(whereSeparator: { $0.isWhitespace || $0.isPunctuation })
+        var foundDay: Int?
+        var foundMonth: Int?
+        
+        for comp in components {
+            let cleanComp = String(comp).trimmingCharacters(in: .decimalDigits.inverted)
+            if let day = Int(cleanComp) {
+                // Ensure we don't pick up a year as a day
+                if day > 0 && day <= 32 {
+                    foundDay = day
+                }
+            }
+            
+            for (index, synonyms) in monthSynonyms {
+                if synonyms.contains(String(comp)) {
+                    foundMonth = index
+                    break
+                }
+            }
+        }
+        
+        if let m = foundMonth, let d = foundDay {
+            return (m, d)
+        }
+        return nil
+    }
+    
+    private func performDaysBetweenCalculation() -> String {
+        guard let start = daysBetweenStart, let end = daysBetweenEnd, let year = daysBetweenYear else {
+            return "I'm sorry, I ran into an issue calculating those days. Could we try again?"
+        }
+        
+        let startBS = BSDate(year: year, month: start.month, day: start.day)
+        let endBS = BSDate(year: year, month: end.month, day: end.day)
+        
+        if let days = NepaliCalendar.shared.daysBetween(from: startBS, to: endBS) {
+            let startMonthName = NepaliCalendar.shared.months[start.month - 1]
+            let endMonthName = NepaliCalendar.shared.months[end.month - 1]
+            let startDayDigits = NepaliCalendar.shared.toNepaliDigits(start.day)
+            let endDayDigits = NepaliCalendar.shared.toNepaliDigits(end.day)
+            let yearDigits = NepaliCalendar.shared.toNepaliDigits(year)
+            
+            let absDays = abs(days)
+            return "There are **\(absDays) days** between \(startMonthName) \(startDayDigits) and \(endMonthName) \(endDayDigits), \(yearDigits) BS. [DATE:\(startBS.year):\(startBS.month):\(startBS.day)] [DATE:\(endBS.year):\(endBS.month):\(endBS.day)]"
+        }
+        
+        return "I couldn't calculate the duration for those specific dates. Please make sure they are valid dates for the year \(year)."
+    }
+    
     private func handleIdleState(for input: String) -> String {
         if matches(input: input, keywords: ["hello", "hi", "namaste", "hey"]) {
-            return "नमस्ते! How can I help you with your schedule? You can ask about holidays, dates, or plan a vacation."
+            return "नमस्ते! How can I help you with your schedule today? You can ask about holidays, calculate days between dates, or plan a vacation."
         }
         
         if matches(input: input, keywords: ["what is today", "today's date", "today date"]) {
@@ -133,6 +254,40 @@ class AIResponseGenerator {
             return getTodaysDateInfo()
         }
         
+        // Check for date range: "Jestha 12th to Kartik 13th" or "days between..."
+        if input.contains(" to ") || input.contains(" and ") || input.contains("days between") || input.contains("how many days from") {
+            let (start, end) = parseTwoDates(from: input)
+            
+            if let s = start, let e = end {
+                // Extract a 4-digit year
+                var year: Int?
+                let yearMatches = input.lowercased().split(whereSeparator: { !$0.isNumber })
+                for match in yearMatches {
+                    if match.count == 4, let y = Int(String(match)), y >= 2000 && y <= 2100 {
+                        year = y
+                        break
+                    }
+                }
+                
+                if let y = year {
+                    self.daysBetweenStart = s
+                    self.daysBetweenEnd = e
+                    self.daysBetweenYear = y
+                    let response = performDaysBetweenCalculation()
+                    resetConversation()
+                    return response
+                } else {
+                    self.daysBetweenStart = s
+                    self.daysBetweenEnd = e
+                    conversationState = .awaitingDaysBetweenYear
+                    return "Which year are we looking at? (e.g., 2083)"
+                }
+            } else if input.contains("days between") || input.contains("how many days from") {
+                conversationState = .awaitingDaysBetweenRange
+                return "Sure! Please let me know the dates you're interested in, like 'Baishak 12 to Kartik 16'."
+            }
+        }
+
         if let holidayName = findHolidayName(in: input) {
             lastHolidayQueried = holidayName
             lastAction = .checkingHoliday
@@ -163,7 +318,7 @@ class AIResponseGenerator {
             lastAction = .checkingDate
             return getInfoForDate(input: input)
         }
-        
+
         let durationKeywords = ["how long", "how many days", "days left", "days remaining", "until", "till"]
         if durationKeywords.contains(where: { input.contains($0) }) {
             lastAction = .calculatingDuration
@@ -281,7 +436,7 @@ class AIResponseGenerator {
         self.userOffDays = offDays
         conversationState = .awaitingLeaveDayCount
         
-        return "Got it. And how many working days can you take off? CHAT_OPTIONS:[1 Day,2 Days,3 Days]"
+        return "Got it. And how many working days can you take off? CHAT_OPTIONS:[1 Day,2 Days,3 Days,4 Days]"
     }
     
     private func handleLeaveCountResponse(for input: String) -> String {
@@ -560,6 +715,9 @@ class AIResponseGenerator {
         userOffDays = nil
         leaveDaysToTake = nil
         conversionType = nil
+        daysBetweenStart = nil
+        daysBetweenEnd = nil
+        daysBetweenYear = nil
     }
 
     private func findNextNoteMatch(matching input: String) -> (name: String, date: BSDate)? {

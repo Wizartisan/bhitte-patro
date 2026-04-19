@@ -10,6 +10,7 @@ import Foundation
 
 extension Notification.Name {
     static let didChangeDefaultViewMode = Notification.Name("didChangeDefaultViewMode")
+    static let didSelectCalendarDate = Notification.Name("didSelectCalendarDate")
 }
 
 struct SettingsView: View {

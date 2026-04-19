@@ -9,34 +9,115 @@ import Foundation
 
 class AIResponseGenerator {
     static let shared = AIResponseGenerator()
+    
     private var conversationState: ConversationState = .idle
     private var userOffDays: [Int]? // 0 = Sunday, 6 = Saturday
+    private var lastHolidayQueried: String?
+    private var lastAction: AIAction?
     private var leaveDaysToTake: Int?
+    private var conversionType: ConversionType?
 
     private enum ConversationState {
         case idle
         case awaitingOffDays
         case awaitingLeaveDayCount
+        case awaitingConversionType
+        case awaitingConversionDate
+    }
+    
+    private enum ConversionType {
+        case bsToAD
+        case adToBS
+    }
+    
+    private enum AIAction {
+        case checkingHoliday
+        case checkingDate
+        case calculatingDuration
+        case planningVacation
     }
     
     private let holidaySynonyms: [String: [String]] = [
-        "dashain": ["dashain", "दशैं", "विजया दशमी"],
-        "tihar": ["tihar", "तिहार", "दीपावली"],
-        "holi": ["holi", "होली", "फागु पूर्णिमा"],
-        "new year": ["navabarsha", "नयाँ वर्ष"],
-        "maha shivaratri": ["maha shivaratri", "महाशिवरात्री"],
-        "gai jatra": ["gai jatra", "गाईजात्रा"],
-        "buddha jayanti": ["buddha jayanti", "बुद्ध जयन्ती"]
+        "dashain": ["dashain", "दशैं", "विजया दशमी", "dashain", "dasain"],
+        "tihar": ["tihar", "तिहार", "दीपावली", "tihar", "deepawali", "yamapanchak"],
+        "holi": ["holi", "होली", "फागु पूर्णिमा", "holi", "fagu"],
+        "new year": ["navabarsha", "नयाँ वर्ष", "new year", "nava barsha"],
+        "maha shivaratri": ["maha shivaratri", "महाशिवरात्री", "shivaratri", "shiva ratri"],
+        "gai jatra": ["gai jatra", "गाईजात्रा", "gaijatra", "gai jatra"],
+        "buddha jayanti": ["buddha jayanti", "बुद्ध जयन्ती", "buddha jayanti", "buddha purnima"],
+        "chhat": ["chhath", "छठ", "chhath puja", "chhat"],
+        "lhosar": ["lhosar", "ल्होसार", "sonam lhosar", "gyalpo lhosar", "tamu lhosar"],
+        "janai purnima": ["janai purnima", "जनै पूर्णिमा", "rakshya bandhan"]
+    ]
+    
+    private let monthSynonyms: [Int: [String]] = [
+        1: ["baishakh", "baisakh", "बैशाख"],
+        2: ["jestha", "jeth", "जेठ"],
+        3: ["ashad", "ashar", "असार"],
+        4: ["shrawan", "saun", "साउन"],
+        5: ["bhadra", "bhadau", "भदौ"],
+        6: ["ashwin", "asoj", "असोज"],
+        7: ["kartik", "कात्तिक"],
+        8: ["mangsir", "mansir", "marg", "मंसिर"],
+        9: ["poush", "paush", "push", "पुष"],
+        10: ["magh", "माघ"],
+        11: ["falgun", "phagun", "फागुन"],
+        12: ["chaitra", "chait", "चैत"]
     ]
 
-    func generateResponse(for input: String) -> String {
+    func generateResponse(for input: String, history: [ChatMessage] = []) -> String {
         let lowercasedInput = input.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Context awareness: handle very short queries if they follow a previous query
+        let words = lowercasedInput.split(whereSeparator: { $0.isWhitespace || $0.isPunctuation }).map(String.init)
+        
+        // Month conversion check
+        if words.count <= 3 {
+            for (index, synonyms) in monthSynonyms {
+                if synonyms.contains(where: { lowercasedInput.contains($0) }) {
+                    let nepaliName = NepaliCalendar.shared.months[index - 1]
+                    // If it's just the month name or "what is baishakh", return conversion
+                    if words.count == 1 || lowercasedInput.contains("what") || lowercasedInput.contains("convert") || lowercasedInput.contains("meaning") {
+                        let suffix = index == 1 ? "st" : index == 2 ? "nd" : index == 3 ? "rd" : "th"
+                        return "**\(nepaliName)** is the \(index)\(suffix) month of the Nepali calendar. [DATE:2081:\(index):1]"
+                    }
+                }
+            }
+        }
+
+        if words.count <= 2 {
+            if let holidayName = findHolidayName(in: lowercasedInput) {
+                lastHolidayQueried = holidayName
+                lastAction = .checkingHoliday
+                return findNextHoliday(named: holidayName)
+            }
+        }
+        
+        // Handle "what about..." or "and..." context
+        if lowercasedInput.contains("what about") || lowercasedInput.contains("and") || lowercasedInput.hasPrefix("how about") {
+            if let holidayName = findHolidayName(in: lowercasedInput) {
+                lastHolidayQueried = holidayName
+                return findNextHoliday(named: holidayName)
+            }
+            
+            // If they just say "and tomorrow?" or "and next week?"
+            if lowercasedInput.contains("today") { return getTodaysDateInfo() }
+            if lowercasedInput.contains("tomorrow") {
+                if let tomorrow = NepaliCalendar.shared.addDays(to: NepaliCalendar.shared.convertToBSDate(from: Date())!, days: 1) {
+                    return getInfoForBSDate(date: tomorrow)
+                }
+            }
+        }
 
         switch conversationState {
         case .awaitingOffDays:
             return handleOffDaysResponse(for: lowercasedInput)
         case .awaitingLeaveDayCount:
             return handleLeaveCountResponse(for: lowercasedInput)
+        case .awaitingConversionType:
+            return handleConversionTypeResponse(for: lowercasedInput)
+        case .awaitingConversionDate:
+            return handleConversionDateResponse(for: lowercasedInput)
         case .idle:
             return handleIdleState(for: lowercasedInput)
         }
@@ -44,46 +125,94 @@ class AIResponseGenerator {
     
     private func handleIdleState(for input: String) -> String {
         if matches(input: input, keywords: ["hello", "hi", "namaste", "hey"]) {
-            return "नमस्ते! How can I help you with your schedule?"
+            return "नमस्ते! How can I help you with your schedule? You can ask about holidays, dates, or plan a vacation."
         }
         
-        if matches(input: input, keywords: ["what is today", "today's date"]) {
+        if matches(input: input, keywords: ["what is today", "today's date", "today date"]) {
+            lastAction = .checkingDate
             return getTodaysDateInfo()
         }
         
         if let holidayName = findHolidayName(in: input) {
+            lastHolidayQueried = holidayName
+            lastAction = .checkingHoliday
             return findNextHoliday(named: holidayName)
         }
         
-        if matches(input: input, keywords: ["when is next holiday", "next public holiday"]) {
+        // Check for notes if no holiday was specifically named
+        if let noteResult = findNextNoteMatch(matching: input) {
+            lastAction = .checkingDate
+            let daysRemaining = NepaliCalendar.shared.daysBetween(from: NepaliCalendar.shared.convertToBSDate(from: Date())!, to: noteResult.date) ?? 0
+            let dateTag = "[DATE:\(noteResult.date.year):\(noteResult.date.month):\(noteResult.date.day)]"
+            
+            if daysRemaining == 0 {
+                return "Today you have a note: **\(noteResult.name)**. \(dateTag)"
+            } else if daysRemaining == 1 {
+                return "Tomorrow is **\(noteResult.name)**. \(dateTag)"
+            } else {
+                return "**\(noteResult.name)** is in **\(daysRemaining) days**. \(dateTag)"
+            }
+        }
+        
+        if matches(input: input, keywords: ["when is next holiday", "next public holiday", "upcoming holiday"]) {
+            lastAction = .checkingHoliday
             return findNextHoliday(named: nil)
         }
         
-        if input.contains("what is on") {
+        if input.contains("what is on") || input.contains("what's on") || input.contains("events on") || input.contains("tell me about") {
+            lastAction = .checkingDate
             return getInfoForDate(input: input)
         }
         
-        if input.contains("how long till") || input.contains("how many days until") {
+        let durationKeywords = ["how long", "how many days", "days left", "days remaining", "until", "till"]
+        if durationKeywords.contains(where: { input.contains($0) }) {
+            lastAction = .calculatingDuration
             return calculateDaysUntil(input: input)
         }
-
-        if matches(input: input, keywords: ["best day to take leave", "plan a vacation", "when can i take a leave"]) {
-            conversationState = .awaitingOffDays
-            return "I can help you plan a vacation. First, what are your weekly off-days? (e.g., Saturday, Sunday)"
+        
+        if input.contains("date conversion") || input.contains("convert date") {
+            conversationState = .awaitingConversionType
+            return "Sure! Would you like to convert **BS to AD** or **AD to BS**? CHAT_OPTIONS:[BS to AD,AD to BS]"
         }
 
-        return "Sorry, I'm not sure how to answer that. You can ask me about dates, holidays, or help planning a vacation."
+        let vacationTriggers = [
+            "when should i take leave",
+            "best time to take leave",
+            "plan a vacation",
+            "exhausted from work",
+            "need a break",
+            "vacation i can take this month",
+            "best day to take leave",
+            "i'm exhausted",
+            "i am exhausted"
+        ]
+        
+        if matches(input: input, keywords: vacationTriggers) {
+            conversationState = .awaitingOffDays
+            lastAction = .planningVacation
+            return "I can help you plan a vacation. Saturday is always off. Which other day do you have off? CHAT_OPTIONS:[Friday,Sunday]"
+        }
+        
+        // Fallback: if input looks like just a date (e.g. "17th baishakh")
+        if parseDate(from: input) != nil {
+            return getInfoForDate(input: input)
+        }
+
+        return "I'm not sure I understood. You can ask me:\n- \"When is Dashain?\"\n- \"How many days until 15th Jestha?\"\n- \"What is today's date?\"\n- \"Help me plan a vacation\""
     }
     
     private func getTodaysDateInfo() -> String {
         guard let today = NepaliCalendar.shared.convertToBSDate(from: Date()) else {
             return "I'm having trouble getting today's date."
         }
-        let nepaliDate = "\(NepaliCalendar.shared.months[today.month - 1]) \(NepaliCalendar.shared.toNepaliDigits(today.day)), \(NepaliCalendar.shared.toNepaliDigits(today.year))"
-        var response = "Today is \(nepaliDate)."
+        let monthName = NepaliCalendar.shared.months[today.month - 1]
+        let nepaliDay = NepaliCalendar.shared.toNepaliDigits(today.day)
+        let nepaliYear = NepaliCalendar.shared.toNepaliDigits(today.year)
+        
+        var response = "Today is **\(monthName) \(nepaliDay), \(nepaliYear)** [DATE:\(today.year):\(today.month):\(today.day)]."
         
         if let tithi = NepaliCalendar.shared.tithiText(year: today.year, month: today.month, day: today.day) {
-            response += "\nTithi: \(tithi)."
+            response += "\nTithi: **\(tithi)**."
         }
         if let holiday = NepaliCalendar.shared.holidayText(year: today.year, month: today.month, day: today.day) {
             response += "\nIt is also **\(holiday)**."
@@ -91,17 +220,43 @@ class AIResponseGenerator {
         return response
     }
     
+    private func getInfoForBSDate(date: BSDate) -> String {
+        let monthName = NepaliCalendar.shared.months[date.month - 1]
+        let nepaliDay = NepaliCalendar.shared.toNepaliDigits(date.day)
+        var response = "**\(monthName) \(nepaliDay)** [DATE:\(date.year):\(date.month):\(date.day)]:"
+        
+        var detailsFound = false
+        if let tithi = NepaliCalendar.shared.tithiText(year: date.year, month: date.month, day: date.day) {
+            response += "\n- Tithi: **\(tithi)**"
+            detailsFound = true
+        }
+        if let holiday = NepaliCalendar.shared.holidayText(year: date.year, month: date.month, day: date.day) {
+            response += "\n- Holiday: **\(holiday)**"
+            detailsFound = true
+        }
+        
+        // Check for user notes
+        let dateKey = "\(date.year)-\(String(format: "%02d", date.month))-\(String(format: "%02d", date.day))"
+        if let note = PatroNoteManager.shared.notes[dateKey], !note.isEmpty {
+            response += "\n- Note: **\(note)**"
+            detailsFound = true
+        }
+        
+        return detailsFound ? response : "No specific events for \(monthName) \(nepaliDay)."
+    }
+    
     private func getInfoForDate(input: String) -> String {
         guard let date = parseDate(from: input) else {
             return "I couldn't understand which date you're asking about. Please use a format like '18th Baishakh'."
         }
         
-        let nepaliDate = "\(NepaliCalendar.shared.months[date.month - 1]) \(NepaliCalendar.shared.toNepaliDigits(date.day))"
-        var response = "On \(nepaliDate):"
+        let monthName = NepaliCalendar.shared.months[date.month - 1]
+        let nepaliDay = NepaliCalendar.shared.toNepaliDigits(date.day)
+        var response = "On **\(monthName) \(nepaliDay)** [DATE:\(date.year):\(date.month):\(date.day)]:"
         
         var detailsFound = false
         if let tithi = NepaliCalendar.shared.tithiText(year: date.year, month: date.month, day: date.day) {
-            response += "\n- Tithi is \(tithi)."
+            response += "\n- Tithi is **\(tithi)**."
             detailsFound = true
         }
         if let holiday = NepaliCalendar.shared.holidayText(year: date.year, month: date.month, day: date.day) {
@@ -109,79 +264,102 @@ class AIResponseGenerator {
             detailsFound = true
         }
         
-        return detailsFound ? response : "I don't have any specific events for \(nepaliDate)."
+        return detailsFound ? response : "I don't have any specific events for \(monthName) \(nepaliDay)."
     }
 
     private func handleOffDaysResponse(for input: String) -> String {
-        var offDays: [Int] = []
-        if input.contains("sunday") { offDays.append(0) }
-        if input.contains("monday") { offDays.append(1) }
-        if input.contains("tuesday") { offDays.append(2) }
-        if input.contains("wednesday") { offDays.append(3) }
-        if input.contains("thursday") { offDays.append(4) }
-        if input.contains("friday") { offDays.append(5) }
-        offDays.append(6) // Assume Saturday is always off
+        var offDays: [Int] = [6] // Saturday is always off
         
-        self.userOffDays = Array(Set(offDays))
+        if input.contains("friday") {
+            offDays.append(5)
+        } else if input.contains("sunday") {
+            offDays.append(0)
+        } else {
+            return "Please choose between Friday or Sunday. CHAT_OPTIONS:[Friday,Sunday]"
+        }
+        
+        self.userOffDays = offDays
         conversationState = .awaitingLeaveDayCount
         
-        return "Great. And how many working days can you take off? CHAT_OPTIONS:[1 Day,2 Days,3 Days,4 Days]"
+        return "Got it. And how many working days can you take off? CHAT_OPTIONS:[1 Day,2 Days,3 Days]"
     }
     
     private func handleLeaveCountResponse(for input: String) -> String {
         let numericInput = input.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
-        guard let leaveDays = Int(numericInput), (1...4).contains(leaveDays) else {
-            resetConversation()
-            return "Please select one of the provided options. Let's start over when you're ready."
+        guard let leaveDays = Int(numericInput), (1...10).contains(leaveDays) else {
+            return "Please provide a valid number of days (1-10)."
         }
         
         self.leaveDaysToTake = leaveDays
+        let result = calculateBestLeaveDay(leaveDays: leaveDays)
         resetConversation()
 
-        guard let result = calculateBestLeaveDay(leaveDays: leaveDays) else {
-            return "I looked ahead 3 months but couldn't find a good opportunity to use \(leaveDays) leave day(s). Maybe try with fewer days?"
+        guard let bestOption = result else {
+            return "I looked ahead 4 months but couldn't find a perfect opportunity. Try taking fewer leave days?"
         }
         
-        let (leaveDates, totalDays) = result
-        let startDate = leaveDates.first!
-        let nepaliStartDate = "\(NepaliCalendar.shared.months[startDate.month - 1]) \(NepaliCalendar.shared.toNepaliDigits(startDate.day))"
+        let (leaveDates, fullBlock) = bestOption
+        let totalDays = fullBlock.count
         
-        if leaveDates.count == 1 {
-            return "Your best option is to take **\(nepaliStartDate)** off. This will give you a **\(totalDays)-day vacation**."
-        } else {
-            let endDate = leaveDates.last!
-            let nepaliEndDate = "\(NepaliCalendar.shared.months[endDate.month - 1]) \(NepaliCalendar.shared.toNepaliDigits(endDate.day))"
-            return "Your best option is to take leave from **\(nepaliStartDate)** to **\(nepaliEndDate)**. This will give you a **\(totalDays)-day vacation**."
+        let leaveDateStrings = leaveDates.map { date in
+            let month = NepaliCalendar.shared.months[date.month - 1]
+            let day = NepaliCalendar.shared.toNepaliDigits(date.day)
+            return "**\(month) \(day)**"
+        }.joined(separator: ", ")
+        
+        var response = "To get a **\(totalDays)-day** break, you should take leave on \(leaveDateStrings).\n\nYour full break will be:\n"
+        
+        // Sort full block by date
+        let sortedBlock = fullBlock.sorted { d1, d2 in
+            if d1.year != d2.year { return d1.year < d2.year }
+            if d1.month != d2.month { return d1.month < d2.month }
+            return d1.day < d2.day
         }
+        
+        for date in sortedBlock {
+            response += "[DATE:\(date.year):\(date.month):\(date.day)] "
+        }
+        
+        return response
     }
 
-    private func calculateBestLeaveDay(leaveDays: Int) -> (dates: [BSDate], total: Int)? {
+    private func calculateBestLeaveDay(leaveDays: Int) -> (leaveDates: [BSDate], fullBlock: [BSDate])? {
         guard let offDays = userOffDays, let today = NepaliCalendar.shared.convertToBSDate(from: Date()) else { return nil }
 
-        var bestOption: (dates: [BSDate], total: Int) = ([], 0)
+        var bestOption: (leaveDates: [BSDate], fullBlock: [BSDate])?
 
-        for i in 1...90 {
+        // Search for the BEST (longest) vacation block within the next 30 days
+        for i in 1...30 {
             guard let startDate = NepaliCalendar.shared.addDays(to: today, days: i) else { continue }
             
             var potentialLeaveDays: [BSDate] = []
             var cursorDate = startDate
+            var daysFound = 0
+            
+            // Try to find consecutive working days to take as leave
+            // Or skip non-working days to find the next available working days
             while potentialLeaveDays.count < leaveDays {
                 if isWorkDay(date: cursorDate, offDays: offDays) {
                     potentialLeaveDays.append(cursorDate)
                 }
                 guard let nextDay = NepaliCalendar.shared.addDays(to: cursorDate, days: 1) else { break }
                 cursorDate = nextDay
+                
+                // Safety: don't look too far ahead for a single block
+                daysFound += 1
+                if daysFound > 45 { break } 
             }
             
             if potentialLeaveDays.count != leaveDays { continue }
             
-            var vacationBlock: Set<String> = Set(potentialLeaveDays.map { $0.id })
+            // Calculate total block size by expanding in both directions
+            var vacationBlockSet: Set<BSDate> = Set(potentialLeaveDays)
             
             var backDate = potentialLeaveDays.first!
             while true {
                 guard let prevDay = NepaliCalendar.shared.addDays(to: backDate, days: -1) else { break }
                 if !isWorkDay(date: prevDay, offDays: offDays) {
-                    vacationBlock.insert(prevDay.id)
+                    vacationBlockSet.insert(prevDay)
                     backDate = prevDay
                 } else { break }
             }
@@ -190,17 +368,23 @@ class AIResponseGenerator {
             while true {
                 guard let nextDay = NepaliCalendar.shared.addDays(to: fwdDate, days: 1) else { break }
                 if !isWorkDay(date: nextDay, offDays: offDays) {
-                    vacationBlock.insert(nextDay.id)
+                    vacationBlockSet.insert(nextDay)
                     fwdDate = nextDay
                 } else { break }
             }
             
-            if vacationBlock.count > bestOption.total {
-                bestOption = (potentialLeaveDays, vacationBlock.count)
+            let currentFullBlock = Array(vacationBlockSet).sorted { d1, d2 in
+                if d1.year != d2.year { return d1.year < d2.year }
+                if d1.month != d2.month { return d1.month < d2.month }
+                return d1.day < d2.day
+            }
+            
+            if bestOption == nil || currentFullBlock.count > bestOption!.fullBlock.count {
+                bestOption = (potentialLeaveDays, currentFullBlock)
             }
         }
 
-        return bestOption.total > 0 ? bestOption : nil
+        return bestOption
     }
     
     private func isWorkDay(date: BSDate, offDays: [Int]) -> Bool {
@@ -208,15 +392,26 @@ class AIResponseGenerator {
             return false
         }
         guard let adDate = NepaliCalendar.shared.convertToADDate(from: date) else { return true }
-        let weekday = Calendar.current.component(.weekday, from: adDate) - 1
+        let weekday = Calendar.current.component(.weekday, from: adDate) - 1 // 0=Sun, 6=Sat
+        
+        if weekday == 6 { return false } // Saturday is ALWAYS a holiday
+        
         return !offDays.contains(weekday)
     }
 
     private func findHolidayName(in input: String) -> String? {
-        let inputWords = Set(input.split(whereSeparator: { $0.isWhitespace || $0.isPunctuation }).map { String($0) })
+        let words = input.lowercased().split(whereSeparator: { $0.isWhitespace || $0.isPunctuation }).map(String.init)
+        
+        // Check for specific holiday names
         for (englishName, synonyms) in holidaySynonyms {
             for synonym in synonyms {
-                if inputWords.contains(where: { $0.caseInsensitiveCompare(synonym) == .orderedSame }) {
+                // Use strict word matching for short names like "holi" 
+                // to prevent matching "holiday"
+                if synonym == "holi" || synonym == "fagu" {
+                    if words.contains(synonym) {
+                        return englishName
+                    }
+                } else if words.contains(synonym) || input.contains(synonym) {
                     return englishName
                 }
             }
@@ -229,69 +424,173 @@ class AIResponseGenerator {
         
         let synonyms: [String]
         if let name = holidayName {
-            synonyms = holidaySynonyms[name] ?? []
+            synonyms = holidaySynonyms[name] ?? [name]
         } else {
-            synonyms = [] // Empty array means search for any holiday
+            synonyms = []
         }
 
-        if let result = NepaliCalendar.shared.findNextHoliday(matching: synonyms) {
-            let nepaliDate = "\(NepaliCalendar.shared.months[result.date.month - 1]) \(NepaliCalendar.shared.toNepaliDigits(result.date.day))"
+        if let result = NepaliCalendar.shared.findNextHoliday(matching: synonyms.isEmpty ? nil : synonyms) {
             let daysRemaining = NepaliCalendar.shared.daysBetween(from: today, to: result.date) ?? 0
             
-            if holidayName != nil {
-                return "The next \(result.name) is on **\(nepaliDate)**, in **\(daysRemaining) days**."
+            let dateTag = "[DATE:\(result.date.year):\(result.date.month):\(result.date.day)]"
+            
+            if daysRemaining == 0 {
+                return "Today is **\(result.name)**! \(dateTag)"
+            } else if daysRemaining == 1 {
+                return "**\(result.name)** is tomorrow! \(dateTag)"
             } else {
-                return "The next public holiday is **\(result.name)** on **\(nepaliDate)**, in **\(daysRemaining) days**."
+                return "**\(result.name)** is in **\(daysRemaining) days**. \(dateTag)"
             }
         } else {
-            let holidayDisplayName = holidayName != nil ? "'\(holidayName!)'" : "any upcoming holidays"
-            return "I couldn't find \(holidayDisplayName) in the next year."
+            let display = holidayName ?? "any holiday"
+            return "I couldn't find \(display) in the upcoming months."
         }
     }
     
     private func parseDate(from input: String) -> BSDate? {
-        let components = input.split(whereSeparator: { $0.isWhitespace || $0.isPunctuation })
+        let components = input.lowercased().split(whereSeparator: { $0.isWhitespace || $0.isPunctuation })
         
-        guard let dayStr = components.first(where: { Int($0.trimmingCharacters(in: .decimalDigits.inverted)) != nil }),
-              let day = Int(dayStr.trimmingCharacters(in: .decimalDigits.inverted)),
-              let monthName = components.first(where: { NepaliCalendar.shared.months.map { $0.lowercased() }.contains(String($0)) })
-        else {
-            return nil
+        var foundDay: Int?
+        var foundMonth: Int?
+        
+        for comp in components {
+            let cleanComp = String(comp).trimmingCharacters(in: .decimalDigits.inverted)
+            if let day = Int(cleanComp) {
+                foundDay = day
+            }
+            
+            // Check month synonyms
+            for (index, synonyms) in monthSynonyms {
+                if synonyms.contains(String(comp)) {
+                    foundMonth = index
+                    break
+                }
+            }
         }
-
-        if let monthIndex = NepaliCalendar.shared.months.firstIndex(where: { $0.lowercased() == monthName.lowercased() }) {
-            let month = monthIndex + 1
+        
+        if let m = foundMonth {
             let year = NepaliCalendar.shared.convertToBSDate(from: Date())?.year ?? 2081
-            return BSDate(year: year, month: month, day: day)
+            return BSDate(year: year, month: m, day: foundDay ?? 1)
         }
         return nil
     }
 
     private func calculateDaysUntil(input: String) -> String {
-        guard let targetDate = parseDate(from: input) else {
-            return "I couldn't understand the date. Please use a format like '12th Jestha'."
+        if let targetDate = parseDate(from: input) {
+            if let today = NepaliCalendar.shared.convertToBSDate(from: Date()) {
+                var finalTargetDate = targetDate
+                if (targetDate.month < today.month || (targetDate.month == today.month && targetDate.day < today.day)) {
+                    finalTargetDate.year += 1
+                }
+                if let days = NepaliCalendar.shared.daysBetween(from: today, to: finalTargetDate) {
+                    let monthName = NepaliCalendar.shared.months[targetDate.month - 1]
+                    let dateTag = "[DATE:\(finalTargetDate.year):\(finalTargetDate.month):\(finalTargetDate.day)]"
+                    return "There are **\(days) days** until \(monthName) \(targetDate.day). \(dateTag)"
+                }
+            }
         }
         
-        if let today = NepaliCalendar.shared.convertToBSDate(from: Date()) {
-            var finalTargetDate = targetDate
-            if (targetDate.month < today.month || (targetDate.month == today.month && targetDate.day < today.day)) {
-                finalTargetDate.year += 1
-            }
-            if let days = NepaliCalendar.shared.daysBetween(from: today, to: finalTargetDate) {
-                let nepaliDateText = "\(NepaliCalendar.shared.months[targetDate.month - 1]) \(NepaliCalendar.shared.toNepaliDigits(targetDate.day))"
-                return "There are **\(days) days** until \(nepaliDateText)."
-            }
+        // Fallback: check notes
+        if let noteResult = findNextNoteMatch(matching: input) {
+            let daysRemaining = NepaliCalendar.shared.daysBetween(from: NepaliCalendar.shared.convertToBSDate(from: Date())!, to: noteResult.date) ?? 0
+            let dateTag = "[DATE:\(noteResult.date.year):\(noteResult.date.month):\(noteResult.date.day)]"
+            return "Your note **\(noteResult.name)** is in **\(daysRemaining) days**. \(dateTag)"
         }
-        return "Sorry, I was unable to calculate the duration."
+        
+        return "I couldn't understand that date or find a matching note."
     }
 
     private func matches(input: String, keywords: [String]) -> Bool {
         keywords.contains { input.contains($0) }
     }
     
+    private func handleConversionTypeResponse(for input: String) -> String {
+        if input.contains("bs to ad") {
+            conversionType = .bsToAD
+            conversationState = .awaitingConversionDate
+            return "Please provide the BS date in **yyyy-mm-dd** format (e.g., 2081-01-01)."
+        } else if input.contains("ad to bs") {
+            conversionType = .adToBS
+            conversationState = .awaitingConversionDate
+            return "Please provide the AD date in **yyyy-mm-dd** format (e.g., 2024-04-13)."
+        } else {
+            return "Please select a conversion type. CHAT_OPTIONS:[BS to AD,AD to BS]"
+        }
+    }
+    
+    private func handleConversionDateResponse(for input: String) -> String {
+        let components = input.components(separatedBy: CharacterSet(charactersIn: "-/."))
+        guard components.count == 3,
+              let year = Int(components[0]),
+              let month = Int(components[1]),
+              let day = Int(components[2]) else {
+            return "Invalid format. Please use **yyyy-mm-dd**."
+        }
+        
+        let type = conversionType
+        resetConversation()
+        
+        if type == .bsToAD {
+            let bsDate = BSDate(year: year, month: month, day: day)
+            if let adDate = NepaliCalendar.shared.convertToADDate(from: bsDate) {
+                let formatter = DateFormatter()
+                formatter.dateStyle = .long
+                return "The AD equivalent of **\(year)-\(month)-\(day) BS** is **\(formatter.string(from: adDate))**."
+            }
+        } else {
+            // AD to BS
+            var dateComponents = DateComponents()
+            dateComponents.year = year
+            dateComponents.month = month
+            dateComponents.day = day
+            if let adDate = Calendar.current.date(from: dateComponents),
+               let bsDate = NepaliCalendar.shared.convertToBSDate(from: adDate) {
+                let monthName = NepaliCalendar.shared.months[bsDate.month - 1]
+                let nepaliDay = NepaliCalendar.shared.toNepaliDigits(bsDate.day)
+                let nepaliYear = NepaliCalendar.shared.toNepaliDigits(bsDate.year)
+                return "The BS equivalent of **\(year)-\(month)-\(day) AD** is **\(monthName) \(nepaliDay), \(nepaliYear)** [DATE:\(bsDate.year):\(bsDate.month):\(bsDate.day)]."
+            }
+        }
+        
+        return "I couldn't convert that date. Please make sure it's a valid date."
+    }
+
     private func resetConversation() {
         conversationState = .idle
         userOffDays = nil
         leaveDaysToTake = nil
+        conversionType = nil
+    }
+
+    private func findNextNoteMatch(matching input: String) -> (name: String, date: BSDate)? {
+        let today = NepaliCalendar.shared.convertToBSDate(from: Date())!
+        let notes = PatroNoteManager.shared.notes
+        
+        // Search for the next 365 days
+        for i in 0...365 {
+            if let date = NepaliCalendar.shared.addDays(to: today, days: i) {
+                let dateKey = "\(date.year)-\(String(format: "%02d", date.month))-\(String(format: "%02d", date.day))"
+                if let noteContent = notes[dateKey], !noteContent.isEmpty {
+                    let noteContentLower = noteContent.lowercased()
+                    let inputLower = input.lowercased()
+                    
+                    // Simple contains check for phrases like "my birthday" or "workout"
+                    if inputLower.contains(noteContentLower) || noteContentLower.contains(inputLower) {
+                        return (noteContent, date)
+                    }
+                    
+                    // Word by word check
+                    let noteWords = noteContentLower.split(whereSeparator: { $0.isWhitespace || $0.isPunctuation })
+                    let inputWords = inputLower.split(whereSeparator: { $0.isWhitespace || $0.isPunctuation })
+                    
+                    for word in inputWords {
+                        if noteWords.contains(where: { $0 == word }) {
+                            return (noteContent, date)
+                        }
+                    }
+                }
+            }
+        }
+        return nil
     }
 }

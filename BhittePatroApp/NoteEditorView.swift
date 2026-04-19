@@ -62,11 +62,22 @@ struct NoteEditorView: View {
             .padding(.bottom, 20)
             
             // Writing Area
-            TextEditor(text: $content)
-                .font(.system(size: 16, design: .serif))
-                .lineSpacing(4)
-                .focused($isFocused)
-                .scrollContentBackground(.hidden)
+            VStack(alignment: .trailing, spacing: 4) {
+                TextEditor(text: $content)
+                    .font(.system(size: 16, design: .serif))
+                    .lineSpacing(4)
+                    .focused($isFocused)
+                    .scrollContentBackground(.hidden)
+                    .onChange(of: content) { _, newValue in
+                        if newValue.count > 100 {
+                            content = String(newValue.prefix(100))
+                        }
+                    }
+                
+                Text("\(content.count)/100")
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundStyle(content.count >= 100 ? .red : .secondary)
+            }
         }
         .padding(20)
         .onAppear {

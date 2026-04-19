@@ -11,10 +11,12 @@ import Foundation
 
 
 // MARK: - Models
-struct BSDate: Equatable {
+struct BSDate: Equatable, Hashable, Identifiable {
     var year: Int
     var month: Int
     var day: Int
+    
+    var id: String { "\(year)-\(month)-\(day)" }
 }
 
 // MARK: - Calendar Engine
@@ -316,12 +318,14 @@ enum CalendarViewMode: String, CaseIterable {
     case today
     case calendar
     case settings
+    case ai
     
     var icon: String {
         switch self {
         case .today: return "sun.max"
         case .calendar: return "calendar"
         case .settings: return "gearshape"
+        case .ai: return "sparkle"
         }
     }
     
@@ -330,6 +334,7 @@ enum CalendarViewMode: String, CaseIterable {
         case .today: return "Today"
         case .calendar: return "Calendar"
         case .settings: return "Settings"
+        case .ai: return "AI Chat"
         }
     }
     
@@ -469,9 +474,15 @@ struct VCenterView: View {
                             viewMode = primaryMode
                         }
                     })
+                case .ai:
+                    AIChatView {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            viewMode = .calendar
+                        }
+                    }
             }
         }
-        .frame(width: viewMode == .today ? 210 : viewMode == .settings ? 390 : 330, height: viewMode == .today ? 220 : viewMode == .settings ? 520 : 470)
+        .frame(width: viewMode == .today ? 210 : viewMode == .settings ? 390 : viewMode == .ai ? 370 : 330, height: viewMode == .today ? 220 : viewMode == .settings ? 520 : 470)
         .animation(.easeInOut(duration: 0.2), value: viewMode)
         .onReceive(NotificationCenter.default.publisher(for: .didChangeDefaultViewMode)) { notification in
             if let mode = notification.userInfo?["mode"] as? String {

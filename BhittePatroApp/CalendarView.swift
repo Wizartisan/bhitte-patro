@@ -18,7 +18,6 @@ struct CalendarView: View {
     
     @EnvironmentObject var noteManager: PatroNoteManager
     @State private var showNoteEditor: Bool = false
-    @State private var showAIChatView: Bool = false
     @State private var popoverDate: BSDate? = nil
 
     private let rowSpacing: CGFloat = 2
@@ -72,13 +71,6 @@ struct CalendarView: View {
                 NoteEditorView(date: sel, noteManager: _noteManager.wrappedValue) {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         showNoteEditor = false
-                    }
-                }
-                .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
-            } else if showAIChatView {
-                AIChatView {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        showAIChatView = false
                     }
                 }
                 .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
@@ -185,7 +177,7 @@ struct CalendarView: View {
                 if let today, today.year == displayYear && today.month == displayMonth {
                     Button(action: {
                         withAnimation(.easeInOut(duration: 0.2)) {
-                            showAIChatView = true
+                            viewMode = .ai
                         }
                     }) {
                         Image(systemName: "sparkle")
@@ -631,8 +623,4 @@ fileprivate struct CalendarCellView: View {
             isCurrentMonth = (cell.bsYear == displayYear && cell.bsMonth == displayMonth)
         }
     }
-}
-
-extension BSDate: Identifiable {
-    var id: String { "\(year)-\(month)-\(day)" }
 }

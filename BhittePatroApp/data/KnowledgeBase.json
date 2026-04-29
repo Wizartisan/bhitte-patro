@@ -55,6 +55,16 @@
       "name": "Janai Purnima",
       "significance": "Sacred Thread Festival and Raksha Bandhan.",
       "traditions": "Changing the Janai (sacred thread) and tying protective cords around the wrist."
+    },
+    {
+      "name": "Eid",
+      "significance": "Celebrated by the Muslim community in Nepal. Eid al-Fitr marks the end of Ramadan (fasting), and Eid al-Adha (Bakra Eid) commemorates the sacrifice of Ibrahim.",
+      "traditions": "Special prayers at Masjids (Idgah), feasting on Sewai, and giving charity (Zakat)."
+    },
+    {
+      "name": "Christmas",
+      "significance": "Celebrates the birth of Jesus Christ. It is a public holiday in Nepal, reflecting the country's religious diversity.",
+      "traditions": "Decoration of Christmas trees, exchanging gifts, and attending church services."
     }
   ]
 }

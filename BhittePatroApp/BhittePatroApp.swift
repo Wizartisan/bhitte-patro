@@ -261,22 +261,50 @@ class BhitteCalendar: ObservableObject {
         return result
     }
     
-    func findNextHoliday(matching synonyms: [String]?) -> (name: String, date: BSDate)? {
-        guard let today = convertToBSDate(from: Date()) else { return nil }
+    func findNextHoliday(matching synonyms: [String]?, startingFrom: BSDate? = nil) -> (name: String, date: BSDate)? {
+        guard let today = startingFrom ?? convertToBSDate(from: Date()) else { return nil }
         
+        // Helper to check if any holiday in the list matches
+        func firstMatch(in names: [String], synonyms: [String]) -> String? {
+            // 1. Exact match
+            for name in names {
+                for synonym in synonyms {
+                    if name.caseInsensitiveCompare(synonym) == .orderedSame {
+                        return name
+                    }
+                }
+            }
+            
+            // 2. Contains match (e.g. "Kukur Tihar" contains "Tihar")
+            for name in names {
+                for synonym in synonyms {
+                    if name.lowercased().contains(synonym.lowercased()) || synonym.lowercased().contains(name.lowercased()) {
+                        return name
+                    }
+                }
+            }
+            
+            // 3. Fuzzy match
+            for name in names {
+                for synonym in synonyms {
+                    if AIResponseGenerator.shared.fuzzyMatch(name, synonym) {
+                        return name
+                    }
+                }
+            }
+            
+            return nil
+        }
+
         for i in 0...365 {
             if let date = addDays(to: today, days: i) {
                 if let holidayNames = holidays[date.year]?[date.month]?[date.day], !holidayNames.isEmpty {
-                    let mainHoliday = holidayNames[0]
-                    
                     if let synonyms = synonyms, !synonyms.isEmpty {
-                        for synonym in synonyms {
-                            if mainHoliday.caseInsensitiveCompare(synonym) == .orderedSame {
-                                return (mainHoliday, date)
-                            }
+                        if let matchedName = firstMatch(in: holidayNames, synonyms: synonyms) {
+                            return (matchedName, date)
                         }
                     } else { // Generic search
-                        return (mainHoliday, date)
+                        return (holidayNames[0], date)
                     }
                 }
             }

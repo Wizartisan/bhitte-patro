@@ -473,21 +473,28 @@ struct AIChatView: View {
         // Generate AI response
         let aiResponseRaw = AIResponseGenerator.shared.generateResponse(for: text, history: messages)
         
-        var options: [String] = []
-        var responseText = aiResponseRaw
+        // Split response if [SPLIT] is present
+        let responseParts = aiResponseRaw.components(separatedBy: "[SPLIT]")
         
-        if let range = aiResponseRaw.range(of: "CHAT_OPTIONS:") {
-            responseText = String(aiResponseRaw[..<range.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
-            let optionsString = String(aiResponseRaw[range.upperBound...]).trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
-            options = optionsString.components(separatedBy: ",")
-        }
-        
-        let aiResponse = ChatMessage(text: responseText, options: options, isUser: false)
-        messages.append(aiResponse)
-        
-        // If the new AI response has options, show them in the input bar
-        withAnimation {
-            pendingOptions = options
+        for (index, part) in responseParts.enumerated() {
+            var options: [String] = []
+            var responseText = part
+            
+            if let range = part.range(of: "CHAT_OPTIONS:") {
+                responseText = String(part[..<range.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+                let optionsString = String(part[range.upperBound...]).trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
+                options = optionsString.components(separatedBy: ",")
+            }
+            
+            let aiResponse = ChatMessage(text: responseText, options: options, isUser: false)
+            messages.append(aiResponse)
+            
+            // If the new AI response has options, show them in the input bar
+            if !options.isEmpty {
+                withAnimation {
+                    pendingOptions = options
+                }
+            }
         }
         
         // Persist history
